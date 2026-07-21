@@ -142,10 +142,10 @@ class _SSZSequence[T: SSZType](SSZCollection):
 
     data: Sequence[T] = Field(default_factory=tuple)
     """
-    Immutable sequence of elements.
+    The sequence of elements.
 
     Accepts lists, tuples, or iterables of compatible values on input.
-    Stored as an immutable tuple after validation.
+    Stored as a tuple after validation; mutation revalidates the collection.
     """
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
@@ -313,7 +313,7 @@ class _SSZSequence[T: SSZType](SSZCollection):
 
 class Vector[T: SSZType](_SSZSequence[T]):
     """
-    Fixed-length, immutable SSZ sequence.
+    Fixed-length SSZ sequence.
 
     Holds exactly LENGTH elements of one declared type.
     The element count is pinned at the type level and never changes at runtime.

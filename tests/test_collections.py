@@ -357,12 +357,11 @@ class TestVectorAccessors:
         assert copy == [Uint8(1), Uint8(2), Uint8(3), Uint8(4), Uint8(9)]
         assert list(instance) == [Uint8(1), Uint8(2), Uint8(3), Uint8(4)]
 
-    def test_vector_is_immutable(self) -> None:
-        """Item assignment raises because the underlying model is frozen."""
+    def test_vector_item_assignment_revalidates(self) -> None:
+        """Item assignment replaces the element through full revalidation."""
         instance = Uint8Vector2(data=[Uint8(1), Uint8(2)])
-
-        with pytest.raises(TypeError):
-            instance[0] = 3  # type: ignore[index]
+        instance[0] = 3
+        assert instance == Uint8Vector2(data=[Uint8(3), Uint8(2)])
 
     def test_pydantic_dict_input_coerces_to_vector(self) -> None:
         """Pydantic coerces a dict payload into an Vector with typed elements."""

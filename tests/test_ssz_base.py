@@ -3,6 +3,7 @@
 from typing import Any, cast
 
 import pytest
+from pydantic import ValidationError
 
 from ssz import Uint8, Uint16, Uint64
 from ssz.bitfields import BaseBitlist, BaseBitvector
@@ -10,7 +11,7 @@ from ssz.boolean import Boolean
 from ssz.byte_arrays import BaseByteList
 from ssz.collections import List, Vector
 from ssz.container import Container
-from ssz.exceptions import SSZTypeError
+from ssz.exceptions import SSZTypeError, SSZValueError
 
 
 class Uint16List4(List[Uint16]):
@@ -280,3 +281,70 @@ class TestSSZCollectionBoundTypes:
             LIMIT = Slot(4)
 
         assert SlotBoundList(data=[Uint16(1)]).encode_bytes() == b"\x01\x00"
+
+
+class TestSSZCollectionMutation:
+    """
+    Tests for in-place collection mutation.
+
+    Collections are mutable, unlike containers: element assignment, append, and
+    pop revalidate the whole collection, so size bounds and element coercion
+    behave exactly as they do at construction. The data tuple itself stays
+    immutable, so validation cannot be bypassed through the field.
+    """
+
+    def test_setitem_replaces_and_coerces(self) -> None:
+        """Integer index assignment coerces the value into the element type."""
+        values = Uint16List4(data=[Uint16(1), Uint16(2)])
+        values[1] = 9
+        assert values == Uint16List4(data=[Uint16(1), Uint16(9)])
+
+    def test_setitem_slice_revalidates(self) -> None:
+        """Slice assignment replaces a range of elements."""
+        bits = SmallBitvector(data=[Boolean(True), Boolean(True), Boolean(True)])
+        bits[1:] = [Boolean(False), Boolean(False)]
+        assert bits == SmallBitvector(data=[Boolean(True), Boolean(False), Boolean(False)])
+
+    def test_append_grows_within_limit(self) -> None:
+        """Append adds one element while under the limit."""
+        values = Uint16List4(data=[Uint16(1)])
+        values.append(Uint16(2))
+        assert values == Uint16List4(data=[Uint16(1), Uint16(2)])
+
+    def test_append_beyond_limit_rejected(self) -> None:
+        """Append past the limit fails revalidation and raises."""
+        values = Uint16List4(data=[Uint16(1)] * 4)
+        with pytest.raises((SSZValueError, ValidationError)):
+            values.append(Uint16(5))
+
+    def test_append_on_fixed_length_rejected(self) -> None:
+        """A fixed-length shape rejects any length change at revalidation."""
+        vec = Uint16Vector2(data=[Uint16(1), Uint16(2)])
+        with pytest.raises((SSZValueError, ValidationError)):
+            vec.append(Uint16(3))
+
+    def test_pop_returns_last_and_shrinks(self) -> None:
+        """Pop removes and returns the final element."""
+        values = Uint16List4(data=[Uint16(1), Uint16(2)])
+        assert values.pop() == Uint16(2)
+        assert values == Uint16List4(data=[Uint16(1)])
+
+    def test_byte_list_setitem_replaces_byte(self) -> None:
+        """Byte lists mutate by integer byte value."""
+        payload = SmallByteList(data=b"\xde\xad")
+        payload[0] = 0xBE
+        assert payload == SmallByteList(data=b"\xbe\xad")
+
+    def test_direct_data_assignment_revalidates(self) -> None:
+        """Assigning the data field directly runs the same validation as construction."""
+        values = Uint16List4(data=[Uint16(1)])
+        values.data = cast(Any, [2, 3])
+        assert values == Uint16List4(data=[Uint16(2), Uint16(3)])
+        with pytest.raises((SSZValueError, ValidationError)):
+            values.data = cast(Any, [1, 2, 3, 4, 5])
+
+    def test_containers_stay_frozen(self) -> None:
+        """Containers keep the frozen contract — field assignment raises."""
+        container = TwoFieldContainer(x=Uint8(1), y=Uint16(2))
+        with pytest.raises(ValidationError):
+            container.x = Uint8(3)

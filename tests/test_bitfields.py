@@ -116,15 +116,15 @@ class TestBitvector:
         with pytest.raises(ValueOrValidationError):
             Bitvector4Model(value=invalid_value)
 
-    def test_bitvector_is_immutable(self) -> None:
-        """Item assignment on a Bitvector raises TypeError — Pydantic models are immutable."""
+    def test_bitvector_item_assignment_revalidates(self) -> None:
+        """Item assignment replaces the bit through full revalidation."""
 
         class Bitvector2(BaseBitvector):
             LENGTH = Uint64(2)
 
         vec = Bitvector2(data=[Boolean(True), Boolean(False)])
-        with pytest.raises(TypeError):
-            vec[0] = False  # type: ignore[index]
+        vec[0] = False
+        assert vec == Bitvector2(data=[Boolean(False), Boolean(False)])
 
 
 class TestBitlist:

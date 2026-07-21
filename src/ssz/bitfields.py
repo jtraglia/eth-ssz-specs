@@ -62,10 +62,10 @@ class BaseBitvector(SSZCollection):
 
     data: Sequence[Boolean] = Field(default_factory=tuple)
     """
-    The immutable bit data stored as a sequence of booleans.
+    The bit data stored as a sequence of booleans.
 
     Accepts lists, tuples, or iterables of bool-like values on input.
-    Stored as an immutable tuple after validation.
+    Stored as a tuple after validation; mutation revalidates the bitfield.
     """
 
     @field_validator("data", mode="before")
@@ -248,10 +248,10 @@ class BaseBitlist(SSZCollection):
 
     data: Sequence[Boolean] = Field(default_factory=tuple)
     """
-    The immutable bit data stored as a sequence of booleans.
+    The bit data stored as a sequence of booleans.
 
     Accepts lists, tuples, or iterables of bool-like values on input.
-    Stored as an immutable tuple after validation.
+    Stored as a tuple after validation; mutation revalidates the bitfield.
     """
 
     @field_validator("data", mode="before")

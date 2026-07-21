@@ -2,7 +2,9 @@
 
 import io
 from abc import ABC, abstractmethod
-from typing import IO, Any, Final, Self
+from typing import IO, TYPE_CHECKING, Any, Final, Self
+
+from pydantic import ConfigDict
 
 from ssz.base import StrictBaseModel
 from ssz.exceptions import SSZDefinitionError, SSZSerializationError
@@ -158,7 +160,20 @@ class SSZCollection(SSZModel):
 
         class Uint8List4(List[Uint8]):
             LIMIT = Uint64(4)
+
+    Unlike containers, collections are mutable: element assignment, append, and
+    pop revalidate the whole collection, so size bounds and element coercion
+    behave exactly as they do at construction. Fixed-length shapes accept
+    element assignment but reject any length change at revalidation.
     """
+
+    model_config = ConfigDict(frozen=False, validate_assignment=True)
+
+    if TYPE_CHECKING:
+        # Each concrete subclass declares the real data field with its own type.
+        # This annotation only teaches type checkers the attribute exists here,
+        # where the shared mutation methods assign it.
+        data: Any
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         """Reject subclasses whose declared size bound is not a Uint64."""
@@ -169,6 +184,22 @@ class SSZCollection(SSZModel):
         for bound_name in ("LENGTH", "LIMIT"):
             if bound_name in cls.__dict__ and not isinstance(cls.__dict__[bound_name], Uint64):
                 raise SSZDefinitionError(cls.__name__, f"{bound_name} as a Uint64")
+
+    def __setitem__(self, index: Any, value: Any) -> None:
+        """Replace the element(s) at ``index``, revalidating the collection."""
+        elements = list(self.data)
+        elements[index] = value
+        self.data = elements
+
+    def append(self, value: Any) -> None:
+        """Add one element at the end, revalidating the collection."""
+        self.data = [*self.data, value]
+
+    def pop(self) -> Any:
+        """Remove and return the last element, revalidating the collection."""
+        *rest, last = self.data
+        self.data = rest
+        return last
 
     @classmethod
     def of(cls, *elements: Any) -> Self:
@@ -192,5 +223,4 @@ class SSZCollection(SSZModel):
         Returns:
             A new instance holding exactly the given elements.
         """
-        # The data field is declared by each concrete subclass, not this base.
-        return cls(data=elements)  # ty: ignore[unknown-argument]
+        return cls(data=elements)

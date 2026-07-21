@@ -210,8 +210,8 @@ class Boolean(int, SSZType):
         return self.__xor__(other)
 
     def __eq__(self, other: object) -> bool:
-        """Strict equality — only another boolean compares; anything else raises."""
-        if not isinstance(other, Boolean):
+        """Value-based equality with any boolean or integer."""
+        if not isinstance(other, int):
             raise TypeError(
                 f"Unsupported operand type(s) for ==: "
                 f"'{type(self).__name__}' and '{type(other).__name__}'"
@@ -220,12 +220,12 @@ class Boolean(int, SSZType):
 
     def __ne__(self, other: object) -> bool:
         """
-        Strict inequality — only another boolean compares; anything else raises.
+        Value-based inequality with any boolean or integer.
 
         Defined explicitly because the parent class's not-equal would otherwise
-        bypass the strict equality above.
+        bypass the equality contract above.
         """
-        if not isinstance(other, Boolean):
+        if not isinstance(other, int):
             raise TypeError(
                 f"Unsupported operand type(s) for !=: "
                 f"'{type(self).__name__}' and '{type(other).__name__}'"
@@ -241,5 +241,11 @@ class Boolean(int, SSZType):
         return str(bool(self))
 
     def __hash__(self) -> int:
-        """Return a hash distinct from the equivalent raw bool, matching strict equality."""
-        return hash((type(self), int(self)))
+        """
+        Hash by value, matching plain bool and int.
+
+        Required alongside the equality override: Python drops the inherited
+        hash when a class defines equality, and equal values must hash equally
+        for dict and set correctness.
+        """
+        return hash(int(self))

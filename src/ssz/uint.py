@@ -17,7 +17,18 @@ from ssz.ssz_base import SSZType
 
 
 class BaseUint(int, SSZType):
-    """Base class for fixed-width unsigned integer types."""
+    """
+    Base class for fixed-width unsigned integer types.
+
+    Arithmetic is strictly typed — operands must share the exact type, so mixed
+    expressions like ``Uint64(1) + 1`` raise instead of guessing a result type.
+
+    Comparisons are value-based across integer types: plain ints and other uint
+    widths compare by mathematical value, keeping ordinary code like
+    ``value == 5`` working. Bools are rejected like the constructor rejects
+    them, and every other type raises so type confusion stays loud. Hashes
+    match plain int so equal values hash equally.
+    """
 
     __slots__ = ()
 
@@ -298,41 +309,41 @@ class BaseUint(int, SSZType):
             self._raise_type_error(other, ">>")
         return type(self)(int(other) >> int(self))
 
-    def __eq__(self, other: object) -> bool:
-        """Equality."""
-        if type(other) is not type(self):
+    def __eq__(self, other: Any) -> bool:
+        """Value-based equality with any integer."""
+        if not isinstance(other, int) or isinstance(other, bool):
             self._raise_type_error(other, "==")
-        return super().__eq__(other)
+        return int(self) == int(other)
 
-    def __ne__(self, other: object) -> bool:
-        """Inequality."""
-        if type(other) is not type(self):
+    def __ne__(self, other: Any) -> bool:
+        """Value-based inequality with any integer."""
+        if not isinstance(other, int) or isinstance(other, bool):
             self._raise_type_error(other, "!=")
-        return super().__ne__(other)
+        return int(self) != int(other)
 
     def __lt__(self, other: Any) -> bool:
-        """Less-than."""
-        if type(other) is not type(self):
+        """Value-based less-than with any integer."""
+        if not isinstance(other, int) or isinstance(other, bool):
             self._raise_type_error(other, "<")
-        return super().__lt__(other)
+        return int(self) < int(other)
 
     def __le__(self, other: Any) -> bool:
-        """Less-than-or-equal."""
-        if type(other) is not type(self):
+        """Value-based less-than-or-equal with any integer."""
+        if not isinstance(other, int) or isinstance(other, bool):
             self._raise_type_error(other, "<=")
-        return super().__le__(other)
+        return int(self) <= int(other)
 
     def __gt__(self, other: Any) -> bool:
-        """Greater-than."""
-        if type(other) is not type(self):
+        """Value-based greater-than with any integer."""
+        if not isinstance(other, int) or isinstance(other, bool):
             self._raise_type_error(other, ">")
-        return super().__gt__(other)
+        return int(self) > int(other)
 
     def __ge__(self, other: Any) -> bool:
-        """Greater-than-or-equal."""
-        if type(other) is not type(self):
+        """Value-based greater-than-or-equal with any integer."""
+        if not isinstance(other, int) or isinstance(other, bool):
             self._raise_type_error(other, ">=")
-        return super().__ge__(other)
+        return int(self) >= int(other)
 
     def __repr__(self) -> str:
         """Official representation includes the subtype name."""
@@ -343,8 +354,8 @@ class BaseUint(int, SSZType):
         return str(int(self))
 
     def __hash__(self) -> int:
-        """Hash mixes in the concrete subtype so distinct widths never collide."""
-        return hash((type(self), int(self)))
+        """Hash by mathematical value, matching plain int so equal values hash equally."""
+        return hash(int(self))
 
     def __index__(self) -> int:
         """Return a plain integer for slicing and indexing."""

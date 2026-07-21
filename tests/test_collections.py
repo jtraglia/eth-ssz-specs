@@ -937,3 +937,21 @@ def test_vector_round_trip_random_values(values: list[int]) -> None:
     """Any fixed-length element sequence round-trips unchanged."""
     instance = Uint8Vector4(data=[Uint8(value) for value in values])
     assert Uint8Vector4.decode_bytes(instance.encode_bytes()) == instance
+
+
+def test_composite_elements_convert_between_equivalent_containers() -> None:
+    """Foreign container elements convert into the declared element class."""
+    from ssz import Container
+
+    class PointA(Container):
+        x: Uint64
+
+    class PointB(Container):
+        x: Uint64
+
+    class PointBList(List[PointB]):
+        LIMIT = Uint64(4)
+
+    converted = PointBList.of(PointA(x=Uint64(5)))
+    assert type(converted[0]) is PointB
+    assert converted[0].x == Uint64(5)

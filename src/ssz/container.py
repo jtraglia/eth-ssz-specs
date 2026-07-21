@@ -40,6 +40,9 @@ class Container(SSZModel):
         ):
             if issubclass(annotation, SSZCollection):
                 value = annotation(data=value)
+            elif issubclass(annotation, Container) and isinstance(value, Container):
+                # An equivalent container converts by donating its fields.
+                value = annotation.model_validate(value)
             else:
                 value = annotation(value)
         super().__setattr__(name, value)
@@ -52,6 +55,10 @@ class Container(SSZModel):
     @classmethod
     def _fill_defaults(cls, data: Any) -> Any:
         """Fill missing fields with SSZ defaults and coerce raw collection payloads."""
+        if isinstance(data, Container) and type(data) is not cls:
+            # An equivalent container donates its fields — conversion between
+            # classes that share the field shape, as across spec forks.
+            data = {name: getattr(data, name) for name in type(data).model_fields}
         if not isinstance(data, dict):
             return data
         filled = dict(data)

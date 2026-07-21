@@ -58,7 +58,7 @@ from ssz.exceptions import (
     SSZTypeMismatch,
     SSZValueError,
 )
-from ssz.ssz_base import BYTES_PER_LENGTH_OFFSET, SSZCollection, SSZType
+from ssz.ssz_base import BYTES_PER_LENGTH_OFFSET, SSZCollection, SSZModel, SSZType
 from ssz.uint import Uint32, Uint64
 
 
@@ -113,7 +113,11 @@ def _coerce_elements(element_type: type[SSZType], elements: Sequence[Any]) -> tu
             coerced.append(element)
             continue
         try:
-            coerced.append(cast(Any, element_type)(element))
+            if isinstance(element, SSZModel) and issubclass(element_type, SSZModel):
+                # An equivalent container converts by donating its fields.
+                coerced.append(element_type.model_validate(element))
+            else:
+                coerced.append(cast(Any, element_type)(element))
         except (SSZTypeError, SSZValueError, TypeError, ValueError) as exception:
             raise SSZTypeMismatch(
                 element_type.__name__, type(element), detail=str(exception)

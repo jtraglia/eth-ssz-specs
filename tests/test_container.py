@@ -1,6 +1,7 @@
 """Tests for the SSZ Container base class."""
 
 import io
+from typing import Any, cast
 
 import pytest
 from hypothesis import given, strategies as st
@@ -251,6 +252,51 @@ class TestNestedContainer:
         )
         assert original.encode_bytes() == expected_encoding
         assert OuterVarNested.decode_bytes(expected_encoding) == original
+
+
+class TestEquivalentContainerConversion:
+    """Containers of one class convert into another class with the same shape."""
+
+    def test_field_construction_donates_fields(self) -> None:
+        """A foreign container passed for a field converts to the field's class."""
+
+        class OtherInner(Container):
+            x: Uint64
+            y: Uint64
+
+        other = OtherInner(x=Uint64(1), y=Uint64(2))
+        outer = OuterFixedNested(z=Uint64(7), inner=cast(Any, other))
+        assert type(outer.inner) is InnerFixed
+        assert outer.inner == InnerFixed(x=Uint64(1), y=Uint64(2))
+
+    def test_field_assignment_donates_fields(self) -> None:
+        """Assigning a foreign container coerces it into the field's class."""
+
+        class OtherInner(Container):
+            x: Uint64
+            y: Uint64
+
+        outer = OuterFixedNested(z=Uint64(7), inner=InnerFixed(x=Uint64(1), y=Uint64(2)))
+        outer.inner = OtherInner(x=Uint64(3), y=Uint64(4))
+        assert type(outer.inner) is InnerFixed
+        assert outer.inner.x == Uint64(3)
+
+    def test_nested_donation_recurses(self) -> None:
+        """Donated fields containing foreign containers convert recursively."""
+
+        class OtherInner(Container):
+            x: Uint64
+            y: Uint64
+
+        class OtherOuter(Container):
+            z: Uint64
+            inner: OtherInner
+
+        other = OtherOuter(z=Uint64(9), inner=OtherInner(x=Uint64(1), y=Uint64(2)))
+        converted = OuterFixedNested.model_validate(other)
+        assert type(converted) is OuterFixedNested
+        assert type(converted.inner) is InnerFixed
+        assert converted.inner.y == Uint64(2)
 
 
 class TestSubclassInheritance:

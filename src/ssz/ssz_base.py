@@ -9,6 +9,9 @@ from pydantic import ConfigDict
 from ssz.base import StrictBaseModel
 from ssz.exceptions import SSZDefinitionError, SSZSerializationError
 
+if TYPE_CHECKING:
+    from ssz.byte_arrays import Bytes32
+
 BYTES_PER_LENGTH_OFFSET: Final = 4
 """Width of an SSZ offset prefixing each variable-size element.
 
@@ -82,6 +85,18 @@ class SSZType(ABC):
         self.serialize(stream)
         return stream.getvalue()
 
+    def hash_tree_root(self) -> "Bytes32":
+        """
+        Compute this value's Merkle tree root.
+
+        Method form of the ``hash_tree_root`` function, for fluent use on any
+        SSZ value.
+        """
+        # Deferred import: the merkleization module imports the SSZ types.
+        from ssz.merkleization import hash_tree_root
+
+        return hash_tree_root(self)
+
     @classmethod
     def decode_bytes(cls, data: bytes) -> Self:
         """
@@ -122,6 +137,15 @@ class SSZModel(StrictBaseModel, SSZType):
 
     The default length and string forms switch on which shape the subclass uses.
     """
+
+    def copy(self) -> Self:  # ty: ignore[invalid-method-override]
+        """
+        Return a deep, independent copy of this value.
+
+        Replaces Pydantic's deprecated shallow ``copy`` with the deep copy that
+        value types need: mutating the copy never affects the original.
+        """
+        return self.model_copy(deep=True)
 
     def __len__(self) -> int:
         """Element count for collections, field count for containers."""

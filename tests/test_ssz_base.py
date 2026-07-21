@@ -412,3 +412,23 @@ class TestSSZDefaults:
         """Non-dict inputs bypass default filling and fail model validation itself."""
         with pytest.raises(ValidationError):
             TwoFieldContainer.model_validate([1, 2])
+
+
+class TestSSZMethodForms:
+    """Tests for the fluent method forms of hash_tree_root and copy."""
+
+    def test_hash_tree_root_method_matches_function(self) -> None:
+        """The method form returns exactly what the function computes."""
+        from ssz.merkleization import hash_tree_root
+
+        container = TwoFieldContainer(x=Uint8(1), y=Uint16(2))
+        assert container.hash_tree_root() == hash_tree_root(container)
+        assert Uint64(7).hash_tree_root() == hash_tree_root(Uint64(7))
+
+    def test_copy_is_deep_and_independent(self) -> None:
+        """Mutating a copy never affects the original."""
+        original = Uint16List4(data=[Uint16(1), Uint16(2)])
+        duplicate = original.copy()
+        duplicate[0] = 9
+        assert original == Uint16List4(data=[Uint16(1), Uint16(2)])
+        assert duplicate == Uint16List4(data=[Uint16(9), Uint16(2)])

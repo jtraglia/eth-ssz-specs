@@ -125,7 +125,7 @@ def get_generalized_index(cls: type[SSZType], *path: PathElement) -> int:
             continue
 
         is_variable_size = issubclass(current, (List, BaseByteList, BaseBitlist))
-        if element == "__len__":
+        if isinstance(element, str) and element == "__len__":
             if not is_variable_size:
                 raise SSZValueError(f"{current.__name__} has no mixed-in length")
             gindex = gindex * 2 + 1
@@ -133,6 +133,9 @@ def get_generalized_index(cls: type[SSZType], *path: PathElement) -> int:
             continue
         if not isinstance(element, int):
             raise SSZValueError(f"cannot index {current.__name__} with {element!r}")
+        # Typed indices (e.g. Uint64 subclasses) restrict arithmetic; use the
+        # plain integer value.
+        element = int(element)
         if is_variable_size:
             # Step into the data subtree; the mixed-in length is the right child.
             gindex = gindex * 2

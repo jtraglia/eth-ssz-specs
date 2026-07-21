@@ -168,6 +168,14 @@ class TestGetGeneralizedIndex:
     def test_list_length(self) -> None:
         assert get_generalized_index(Uint64List16, "__len__") == 3
 
+    def test_typed_uint_index(self) -> None:
+        """Indexing with a Uint64 subclass must not trip strict comparisons."""
+
+        class BlobIndex(Uint64):
+            pass
+
+        assert get_generalized_index(CheckpointList4, BlobIndex(2)) == 2 * 4 + 2
+
     def test_basic_vector_element_chunk(self) -> None:
         """Sixteen Uint16 fit in one chunk, so all eight elements share it."""
         assert get_generalized_index(Uint16Vector8, 7) == 1

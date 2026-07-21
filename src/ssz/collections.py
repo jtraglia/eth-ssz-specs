@@ -288,6 +288,8 @@ class _SSZSequence[T: SSZType](SSZCollection):
         Accept the natural input shapes:
 
         - list or tuple    pass through directly.
+        - a collection     donates its own data — conversion between classes
+                           that share an element shape, and copy-construction.
         - other iterables  materialize into a list so the length check works.
         - str or bytes     rejected — iterating yields characters or ints.
 
@@ -298,6 +300,10 @@ class _SSZSequence[T: SSZType](SSZCollection):
         """
         if isinstance(raw_input, (list, tuple)):
             return raw_input
+        # Iterating a Pydantic model yields field pairs, so collections donate
+        # their data explicitly instead of falling through to the iterable path.
+        if isinstance(raw_input, SSZCollection):
+            return raw_input.data
         if isinstance(raw_input, (str, bytes, bytearray)):
             raise SSZTypeMismatch(f"iterable of {cls.ELEMENT_TYPE.__name__}", type(raw_input))
         if hasattr(raw_input, "__iter__"):

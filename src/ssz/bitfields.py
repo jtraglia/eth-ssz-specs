@@ -75,6 +75,11 @@ class BaseBitvector(SSZCollection):
         if not hasattr(cls, "LENGTH"):
             raise SSZDefinitionError(cls.__name__, "LENGTH")
 
+        # Iterating a Pydantic model yields field pairs, so collections donate
+        # their data explicitly instead of falling through to the iterable path.
+        if isinstance(bits_input, SSZCollection):
+            bits_input = bits_input.data
+
         # Materialize generic iterables into a tuple so the length check works.
         if not isinstance(bits_input, (list, tuple)):
             bits_input = tuple(bits_input)
@@ -234,10 +239,14 @@ class BaseBitlist(SSZCollection):
         # Accept different input shapes:
         #
         #   - list or tuple    pass through directly.
+        #   - a collection     donates its own data (a Pydantic model iterates
+        #                      field pairs, so this cannot use the iterable path).
         #   - other iterables  materialize into a list so length is known.
         #   - str or bytes     rejected — iterable but elements are not booleans.
         if isinstance(bits_input, (list, tuple)):
             elements = bits_input
+        elif isinstance(bits_input, SSZCollection):
+            elements = bits_input.data
         elif hasattr(bits_input, "__iter__") and not isinstance(bits_input, (str, bytes)):
             elements = list(bits_input)
         else:

@@ -313,6 +313,11 @@ class BaseByteList(SSZCollection):
         if not hasattr(cls, "LIMIT"):
             raise SSZDefinitionError(cls.__name__, "LIMIT")
 
+        # Another byte list donates its own payload — conversion between
+        # classes that share the byte shape, and copy-construction.
+        if isinstance(value, SSZCollection):
+            value = value.data
+
         # Coerce the input first, then enforce the upper bound.
         coerced_bytes = BaseBytes._coerce_to_bytes(value)
         if len(coerced_bytes) > cls.LIMIT:

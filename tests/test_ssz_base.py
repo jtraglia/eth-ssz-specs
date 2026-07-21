@@ -178,3 +178,71 @@ class TestSSZCollectionOf:
             cast(Any, Uint16List4)([1, 2])
         with pytest.raises(TypeError):
             cast(Any, TwoFieldContainer)(Uint8(1), Uint16(2))
+
+
+class TestSSZCollectionDataDonation:
+    """
+    Tests that a collection given as the data value donates its own data.
+
+    A Pydantic model iterates as field pairs, so without explicit handling a
+    collection input would corrupt the iterable path. Donation enables
+    copy-construction and conversion between classes sharing an element shape.
+    """
+
+    def test_list_accepts_an_equivalent_list(self) -> None:
+        """A list built from another list class holds the same elements."""
+
+        class OtherUint16List4(List[Uint16]):
+            """A distinct class with the same element shape."""
+
+            LIMIT = 4
+
+        source = OtherUint16List4(data=[Uint16(1), Uint16(2)])
+        assert Uint16List4(data=cast(Any, source)) == Uint16List4(data=[Uint16(1), Uint16(2)])
+
+    def test_vector_accepts_an_equivalent_vector(self) -> None:
+        """A vector built from another vector class holds the same elements."""
+
+        class OtherUint16Vector2(Vector[Uint16]):
+            """A distinct class with the same element shape."""
+
+            LENGTH = 2
+
+        source = OtherUint16Vector2(data=[Uint16(1), Uint16(2)])
+        expected = Uint16Vector2(data=[Uint16(1), Uint16(2)])
+        assert Uint16Vector2(data=cast(Any, source)) == expected
+
+    def test_bitvector_accepts_an_equivalent_bitvector(self) -> None:
+        """A bitvector built from another bitvector class holds the same bits."""
+
+        class OtherSmallBitvector(BaseBitvector):
+            """A distinct class with the same bit count."""
+
+            LENGTH = 3
+
+        source = OtherSmallBitvector(data=[Boolean(True), Boolean(False), Boolean(True)])
+        expected = SmallBitvector(data=[Boolean(True), Boolean(False), Boolean(True)])
+        assert SmallBitvector(data=cast(Any, source)) == expected
+
+    def test_bitlist_accepts_an_equivalent_bitlist(self) -> None:
+        """A bitlist built from another bitlist class holds the same bits."""
+
+        class OtherSmallBitlist(BaseBitlist):
+            """A distinct class with the same limit."""
+
+            LIMIT = 8
+
+        source = OtherSmallBitlist(data=[Boolean(True), Boolean(False)])
+        expected = SmallBitlist(data=[Boolean(True), Boolean(False)])
+        assert SmallBitlist(data=cast(Any, source)) == expected
+
+    def test_byte_list_accepts_an_equivalent_byte_list(self) -> None:
+        """A byte list built from another byte list class holds the same payload."""
+
+        class OtherSmallByteList(BaseByteList):
+            """A distinct class with the same limit."""
+
+            LIMIT = 10
+
+        source = OtherSmallByteList(data=b"\xde\xad")
+        assert SmallByteList(data=cast(Any, source)) == SmallByteList(data=b"\xde\xad")

@@ -11,7 +11,7 @@ Two flavors are defined by the SSZ spec:
 Both flavors serialize as the raw bytes themselves — no length prefix, no delimiter.
 """
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Iterator
 from typing import IO, Any, ClassVar, Self, override
 
 from pydantic import Field, field_serializer, field_validator
@@ -396,6 +396,19 @@ class BaseByteList(SSZCollection):
     def __bytes__(self) -> bytes:
         """Return the underlying raw bytes."""
         return self.data
+
+    # The parent Pydantic model iterates field name and value pairs.
+    # Yielding byte values instead matches how plain bytes iterate.
+    # The narrower element type violates strict Liskov substitution, so it is suppressed.
+    @override
+    def __iter__(self) -> Iterator[int]:  # ty: ignore[invalid-method-override]
+        """
+        Iterate over the byte values.
+
+        Defined explicitly because the parent Pydantic model otherwise yields
+        name/value pairs of its fields.
+        """
+        return iter(self.data)
 
     def __add__(self, other: Any) -> bytes:
         """Concatenate with a bytes-like value on the right, returning plain bytes."""

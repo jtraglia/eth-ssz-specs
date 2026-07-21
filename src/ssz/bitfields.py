@@ -13,7 +13,7 @@ Bit i of the input lands in byte i // 8 at position i % 8.
 """
 
 import math
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
 from typing import (
     IO,
     Any,
@@ -90,6 +90,31 @@ class BaseBitvector(SSZCollection):
 
         # Wrap each value in Boolean — the constructor rejects anything outside 0 or 1.
         return tuple(Boolean(bit) for bit in bits_input)
+
+    # The parent Pydantic model iterates field name and value pairs.
+    # Yielding bits instead is the intended collection behavior.
+    # The narrower element type violates strict Liskov substitution, so it is suppressed.
+    @override
+    def __iter__(self) -> Iterator[Boolean]:  # ty: ignore[invalid-method-override]
+        """
+        Iterate over the bits.
+
+        Defined explicitly because the parent Pydantic model otherwise yields
+        name/value pairs of its fields.
+        """
+        return iter(self.data)
+
+    @overload
+    def __getitem__(self, key: int) -> Boolean: ...
+
+    @overload
+    def __getitem__(self, key: slice) -> list[Boolean]: ...
+
+    def __getitem__(self, key: int | slice) -> Boolean | list[Boolean]:
+        """Get a bit by index or slice."""
+        if isinstance(key, slice):
+            return list(self.data[key])
+        return self.data[key]
 
     @classmethod
     @override
@@ -258,6 +283,19 @@ class BaseBitlist(SSZCollection):
 
         # Wrap each value in Boolean — the constructor rejects anything outside 0 or 1.
         return tuple(Boolean(bit) for bit in elements)
+
+    # The parent Pydantic model iterates field name and value pairs.
+    # Yielding bits instead is the intended collection behavior.
+    # The narrower element type violates strict Liskov substitution, so it is suppressed.
+    @override
+    def __iter__(self) -> Iterator[Boolean]:  # ty: ignore[invalid-method-override]
+        """
+        Iterate over the bits.
+
+        Defined explicitly because the parent Pydantic model otherwise yields
+        name/value pairs of its fields.
+        """
+        return iter(self.data)
 
     @overload
     def __getitem__(self, key: int) -> Boolean: ...

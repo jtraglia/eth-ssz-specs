@@ -513,3 +513,16 @@ def test_byte_list_round_trip_random_bytes(raw_bytes: bytes) -> None:
     """Any byte pattern up to the limit, including empty, round-trips unchanged."""
     instance = ByteList16(data=raw_bytes)
     assert ByteList16.decode_bytes(instance.encode_bytes()) == instance
+
+
+class TestByteListIteration:
+    """Tests that byte lists iterate over their byte values like plain bytes."""
+
+    def test_byte_list_iterates_over_byte_values(self) -> None:
+        """Iterating a byte list yields the integer byte values in order."""
+        instance = ByteList5(data=b"\xde\xad")
+        assert list(instance) == [0xDE, 0xAD]
+
+    def test_empty_byte_list_iterates_to_nothing(self) -> None:
+        """Iterating an empty byte list yields nothing."""
+        assert list(ByteList5(data=b"")) == []

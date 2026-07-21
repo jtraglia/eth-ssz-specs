@@ -499,3 +499,33 @@ def test_bitvector_round_trip_random_bits(bits: list[bool]) -> None:
     """Any fixed-length bit pattern round-trips unchanged."""
     instance = Bitvector4(data=tuple(Boolean(bit) for bit in bits))
     assert Bitvector4.decode_bytes(instance.encode_bytes()) == instance
+
+
+class TestBitfieldIterationAndIndexing:
+    """
+    Tests that bitfields iterate and index over their bits.
+
+    Without the explicit dunders, the parent Pydantic model would iterate
+    field name/value pairs and reject indexing entirely.
+    """
+
+    def test_bitvector_iterates_over_bits(self) -> None:
+        """Iterating a bitvector yields its bits in order."""
+        vec = Bitvector4(data=[Boolean(True), Boolean(False), Boolean(True), Boolean(False)])
+        assert list(vec) == [Boolean(True), Boolean(False), Boolean(True), Boolean(False)]
+
+    def test_bitvector_integer_index_returns_bit(self) -> None:
+        """Integer indexing returns the bit at that position."""
+        vec = Bitvector4(data=[Boolean(True), Boolean(False), Boolean(True), Boolean(False)])
+        assert vec[0] == Boolean(True)
+        assert vec[1] == Boolean(False)
+
+    def test_bitvector_slice_returns_bit_list(self) -> None:
+        """Slice indexing returns a list of bits."""
+        vec = Bitvector4(data=[Boolean(True), Boolean(False), Boolean(True), Boolean(False)])
+        assert vec[0:2] == [Boolean(True), Boolean(False)]
+
+    def test_bitlist_iterates_over_bits(self) -> None:
+        """Iterating a bitlist yields its bits in order."""
+        bl = Bitlist8(data=[Boolean(True), Boolean(False), Boolean(True)])
+        assert list(bl) == [Boolean(True), Boolean(False), Boolean(True)]

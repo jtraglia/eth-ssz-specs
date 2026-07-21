@@ -955,3 +955,19 @@ def test_composite_elements_convert_between_equivalent_containers() -> None:
     converted = PointBList.of(PointA(x=Uint64(5)))
     assert type(converted[0]) is PointB
     assert converted[0].x == Uint64(5)
+
+
+def test_byte_list_elements_coerce_from_raw_bytes() -> None:
+    """Raw byte payloads coerce into byte-list elements through their data field."""
+    from ssz.byte_arrays import BaseByteList
+
+    class Blob8(BaseByteList):
+        LIMIT = Uint64(8)
+
+    class Blobs(List[Blob8]):
+        LIMIT = Uint64(4)
+
+    blobs = Blobs.of(b"\x01\x02", b"")
+    assert type(blobs[0]) is Blob8
+    assert blobs[0].data == b"\x01\x02"
+    assert blobs[1].data == b""

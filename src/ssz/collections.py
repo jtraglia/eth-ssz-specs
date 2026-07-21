@@ -113,7 +113,11 @@ def _coerce_elements(element_type: type[SSZType], elements: Sequence[Any]) -> tu
             coerced.append(element)
             continue
         try:
-            if isinstance(element, SSZModel) and issubclass(element_type, SSZModel):
+            if issubclass(element_type, SSZCollection):
+                # A raw payload (or an equivalent collection) coerces through
+                # the element type's data field, as collection fields do.
+                coerced.append(element_type(data=element))
+            elif isinstance(element, SSZModel) and issubclass(element_type, SSZModel):
                 # An equivalent container converts by donating its fields.
                 coerced.append(element_type.model_validate(element))
             else:

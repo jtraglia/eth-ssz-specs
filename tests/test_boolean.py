@@ -171,42 +171,32 @@ def test_inequality_same_type(left: Boolean, right: Boolean, expected: bool) -> 
     assert (left != right) is expected
 
 
-@pytest.mark.parametrize("other", [True, False, 1, 0, "a string", 1.0, None])
-def test_equality_cross_type_raises(other: Any) -> None:
-    """Boolean compared to any non-Boolean value raises TypeError on the LHS."""
+@pytest.mark.parametrize(
+    "other, expected",
+    [(True, True), (False, False)],
+)
+def test_equality_with_plain_booleans_is_value_based(other: Any, expected: bool) -> None:
+    """Boolean compares by value with plain bools."""
+    assert (Boolean(True) == other) is expected
+    assert (other == Boolean(True)) is expected
+    assert (Boolean(True) != other) is not expected
+    assert (other != Boolean(True)) is not expected
+
+
+@pytest.mark.parametrize("other", [1, 0, "a string", 1.0, None])
+def test_equality_with_non_booleans_raises(other: Any) -> None:
+    """Boolean compared to anything but a boolean, even 0 or 1, raises TypeError."""
     name = type(other).__name__
     with pytest.raises(TypeError) as exception_info:
         _ = Boolean(True) == other
     assert (
         str(exception_info.value) == f"Unsupported operand type(s) for ==: 'Boolean' and '{name}'"
     )
-
-
-@pytest.mark.parametrize("other", [True, False, 1, 0, "a string", 1.0, None])
-def test_inequality_cross_type_raises(other: Any) -> None:
-    """Boolean != non-Boolean value raises TypeError on the LHS."""
-    name = type(other).__name__
     with pytest.raises(TypeError) as exception_info:
         _ = Boolean(True) != other
     assert (
         str(exception_info.value) == f"Unsupported operand type(s) for !=: 'Boolean' and '{name}'"
     )
-
-
-@pytest.mark.parametrize("other", [1, 0])
-def test_equality_reflected_int_raises(other: int) -> None:
-    """int == Boolean: Boolean subclasses int so its __eq__ runs first and raises."""
-    with pytest.raises(TypeError) as exception_info:
-        _ = other == Boolean(True)
-    assert str(exception_info.value) == "Unsupported operand type(s) for ==: 'Boolean' and 'int'"
-
-
-@pytest.mark.parametrize("other", [1, 0])
-def test_inequality_reflected_int_raises(other: int) -> None:
-    """int != Boolean: Boolean subclasses int so its __ne__ runs first and raises."""
-    with pytest.raises(TypeError) as exception_info:
-        _ = other != Boolean(True)
-    assert str(exception_info.value) == "Unsupported operand type(s) for !=: 'Boolean' and 'int'"
 
 
 def test_repr_and_str() -> None:
@@ -218,9 +208,9 @@ def test_repr_and_str() -> None:
 
 
 def test_hash() -> None:
-    """Tests that the hash is distinct from a raw bool."""
-    assert hash(Boolean(True)) != hash(True)
-    assert hash(Boolean(False)) != hash(False)
+    """Tests that the hash matches the equivalent raw bool, like the equality contract."""
+    assert hash(Boolean(True)) == hash(True)
+    assert hash(Boolean(False)) == hash(False)
     assert hash(Boolean(True)) == hash(Boolean(1))
     assert hash(Boolean(True)) != hash(Boolean(False))
 

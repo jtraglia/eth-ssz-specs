@@ -58,7 +58,7 @@ def _chunk_count(cls: type) -> int:
     if issubclass(cls, BaseByteList):
         return math.ceil(int(cls.LIMIT) / BYTES_PER_CHUNK)
     if issubclass(cls, BaseBytes):
-        return math.ceil(cls.LENGTH / BYTES_PER_CHUNK)
+        return math.ceil(int(cls.LENGTH) / BYTES_PER_CHUNK)
     if issubclass(cls, BaseBitlist):
         return math.ceil(int(cls.LIMIT) / BITS_PER_CHUNK)
     if issubclass(cls, BaseBitvector):

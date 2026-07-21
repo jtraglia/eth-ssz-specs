@@ -545,3 +545,16 @@ class TestByteListIteration:
     def test_empty_byte_list_iterates_to_nothing(self) -> None:
         """Iterating an empty byte list yields nothing."""
         assert list(ByteList5(data=b"")) == []
+
+
+class TestUintLength:
+    """A fixed byte array may declare its length with any integer type."""
+
+    def test_uint64_length_constructs_and_defaults(self) -> None:
+        class Bytes16U(BaseBytes):
+            LENGTH = Uint64(16)
+
+        assert bytes(Bytes16U()) == b"\x00" * 16
+        assert Bytes16U.zero() == Bytes16U(b"\x00" * 16)
+        assert Bytes16U.get_byte_length() == 16
+        assert Bytes16U.decode_bytes(b"\x01" * 16).encode_bytes() == b"\x01" * 16

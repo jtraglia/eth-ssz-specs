@@ -95,16 +95,16 @@ class BaseBytes(bytes, SSZType):
             raise SSZDefinitionError(cls.__name__, "LENGTH")
 
         if value is None:
-            value = b"\x00" * cls.LENGTH
+            value = b"\x00" * int(cls.LENGTH)
         coerced_bytes = cls._coerce_to_bytes(value)
-        if len(coerced_bytes) != cls.LENGTH:
-            raise SSZLengthError(cls.__name__, cls.LENGTH, len(coerced_bytes), unit="bytes")
+        if len(coerced_bytes) != int(cls.LENGTH):
+            raise SSZLengthError(cls.__name__, int(cls.LENGTH), len(coerced_bytes), unit="bytes")
         return super().__new__(cls, coerced_bytes)
 
     @classmethod
     def zero(cls) -> Self:
         """Return a new instance filled with zero bytes."""
-        return cls(b"\x00" * cls.LENGTH)
+        return cls(b"\x00" * int(cls.LENGTH))
 
     @classmethod
     @override
@@ -116,7 +116,7 @@ class BaseBytes(bytes, SSZType):
     @override
     def get_byte_length(cls) -> int:
         """Return the declared byte length."""
-        return cls.LENGTH
+        return int(cls.LENGTH)
 
     @override
     def serialize(self, stream: IO[bytes]) -> int:
@@ -142,8 +142,8 @@ class BaseBytes(bytes, SSZType):
                 - When scope does not equal the declared LENGTH.
                 - When the stream ends before delivering scope bytes.
         """
-        if scope != cls.LENGTH:
-            raise SSZScopeError(cls.__name__, cls.LENGTH, scope)
+        if scope != int(cls.LENGTH):
+            raise SSZScopeError(cls.__name__, int(cls.LENGTH), scope)
         serialized_bytes = stream.read(scope)
         if len(serialized_bytes) != scope:
             raise SSZScopeError(cls.__name__, scope, len(serialized_bytes))
@@ -181,7 +181,7 @@ class BaseBytes(bytes, SSZType):
         # Bytes path enforces the exact declared length, then wraps into a typed instance.
         bytes_path = core_schema.chain_schema(
             [
-                core_schema.bytes_schema(min_length=cls.LENGTH, max_length=cls.LENGTH),
+                core_schema.bytes_schema(min_length=int(cls.LENGTH), max_length=int(cls.LENGTH)),
                 from_input_validator,
             ]
         )

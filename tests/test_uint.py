@@ -291,42 +291,55 @@ def test_comparison_with_same_type(uint_class: Type[BaseUint]) -> None:
 
 
 @pytest.mark.parametrize("uint_class", ALL_UINT_TYPES)
-def test_all_comparisons_with_other_types_raise_error(
-    uint_class: Type[BaseUint],
+def test_comparisons_with_plain_int_use_value_semantics(uint_class: Type[BaseUint]) -> None:
+    """Tests that all comparison operators compare by value with plain ints."""
+    assert uint_class(10) == 10
+    assert 10 == uint_class(10)
+    assert uint_class(10) != 5
+    assert 5 != uint_class(10)
+    assert uint_class(10) > 5
+    assert 5 < uint_class(10)
+    assert uint_class(10) >= 10
+    assert 10 <= uint_class(10)
+
+
+@pytest.mark.parametrize("uint_class", ALL_UINT_TYPES)
+@pytest.mark.parametrize("bad_operand", ["10", 10.0, None, True])
+def test_comparisons_with_non_int_operands_raise_error(
+    uint_class: Type[BaseUint], bad_operand: Any
 ) -> None:
-    """Tests that all comparisons with incompatible types raise TypeError."""
+    """Tests that comparisons with non-integer operands (and bools) raise TypeError."""
     name = uint_class.__name__
+    bad_name = type(bad_operand).__name__
 
-    expected_message = f"Unsupported operand type(s) for ==: '{name}' and 'int'"
+    expected_message = f"Unsupported operand type(s) for ==: '{name}' and '{bad_name}'"
     with pytest.raises(TypeError) as exception_info:
-        _ = uint_class(10) == 10
+        _ = uint_class(10) == bad_operand
     assert str(exception_info.value) == expected_message
 
-    expected_message = f"Unsupported operand type(s) for !=: '{name}' and 'int'"
+    expected_message = f"Unsupported operand type(s) for !=: '{name}' and '{bad_name}'"
     with pytest.raises(TypeError) as exception_info:
-        _ = 10 != uint_class(10)
+        _ = uint_class(10) != bad_operand
     assert str(exception_info.value) == expected_message
 
-    expected_message = f"Unsupported operand type(s) for >: '{name}' and 'int'"
+    expected_message = f"Unsupported operand type(s) for <: '{name}' and '{bad_name}'"
     with pytest.raises(TypeError) as exception_info:
-        _ = uint_class(10) > 5
+        _ = uint_class(10) < bad_operand
     assert str(exception_info.value) == expected_message
 
-    # 5 < uint(10) routes to uint(10).__gt__(5) because uint is a strict int subclass.
-    expected_message = f"Unsupported operand type(s) for >: '{name}' and 'int'"
+    expected_message = f"Unsupported operand type(s) for <=: '{name}' and '{bad_name}'"
     with pytest.raises(TypeError) as exception_info:
-        _ = 5 < uint_class(10)
+        _ = uint_class(10) <= bad_operand
     assert str(exception_info.value) == expected_message
 
-    expected_message = f"Unsupported operand type(s) for >=: '{name}' and 'int'"
+    expected_message = f"Unsupported operand type(s) for >: '{name}' and '{bad_name}'"
     with pytest.raises(TypeError) as exception_info:
-        _ = uint_class(10) >= 10
+        _ = uint_class(10) > bad_operand
     assert str(exception_info.value) == expected_message
 
-    # 10 <= uint(10) routes to uint(10).__ge__(10) by subclass priority.
-    expected_message = f"Unsupported operand type(s) for >=: '{name}' and 'int'"
+    expected_message = f"Unsupported operand type(s) for >=: '{name}' and '{bad_name}'"
     with pytest.raises(TypeError) as exception_info:
-        _ = 10 <= uint_class(10)
+        _ = uint_class(10) >= bad_operand
     assert str(exception_info.value) == expected_message
 
 
@@ -340,8 +353,8 @@ def test_repr_and_str(uint_class: Type[BaseUint]) -> None:
 
 @pytest.mark.parametrize("uint_class", ALL_UINT_TYPES)
 def test_hash(uint_class: Type[BaseUint]) -> None:
-    """Tests that the hash is distinct from a raw int."""
-    assert hash(uint_class(1)) != hash(1)
+    """Tests that the hash matches the mathematical value, like a plain int."""
+    assert hash(uint_class(1)) == hash(1)
     assert hash(uint_class(1)) == hash(uint_class(1))
     assert hash(uint_class(1)) != hash(uint_class(2))
 
@@ -775,24 +788,20 @@ class TestReverseShiftOperators:
         assert str(exception_info.value) == expected_message
 
 
-class TestComparisonTypeErrors:
-    """Tests that comparison operators raise TypeError when given plain int operands."""
+class TestComparisonDunders:
+    """Tests that the comparison dunders accept plain ints and compare by value."""
 
     @pytest.mark.parametrize("uint_class", ALL_UINT_TYPES)
-    def test_lt_rejects_plain_int(self, uint_class: Type[BaseUint]) -> None:
-        """Less-than raises TypeError when compared to a plain int directly."""
-        expected_message = f"Unsupported operand type(s) for <: '{uint_class.__name__}' and 'int'"
-        with pytest.raises(TypeError) as exception_info:
-            uint_class(5).__lt__(10)
-        assert str(exception_info.value) == expected_message
+    def test_lt_accepts_plain_int(self, uint_class: Type[BaseUint]) -> None:
+        """Less-than compares by value when given a plain int directly."""
+        assert uint_class(5).__lt__(10) is True
+        assert uint_class(10).__lt__(5) is False
 
     @pytest.mark.parametrize("uint_class", ALL_UINT_TYPES)
-    def test_le_rejects_plain_int(self, uint_class: Type[BaseUint]) -> None:
-        """Less-than-or-equal raises TypeError when compared to a plain int directly."""
-        expected_message = f"Unsupported operand type(s) for <=: '{uint_class.__name__}' and 'int'"
-        with pytest.raises(TypeError) as exception_info:
-            uint_class(5).__le__(10)
-        assert str(exception_info.value) == expected_message
+    def test_le_accepts_plain_int(self, uint_class: Type[BaseUint]) -> None:
+        """Less-than-or-equal compares by value when given a plain int directly."""
+        assert uint_class(5).__le__(5) is True
+        assert uint_class(6).__le__(5) is False
 
 
 class TestIndexReturnsPlainInt:
@@ -808,28 +817,24 @@ class TestIndexReturnsPlainInt:
         assert type(index_value) is int
 
 
-class TestCrossWidthEqualityIsStrict:
-    """Equality across different unsigned integer widths must raise."""
+class TestCrossWidthComparisonsAreValueBased:
+    """Comparisons across different unsigned integer widths use the mathematical value."""
 
     @pytest.mark.parametrize("type_a, type_b", CROSS_UINT_TYPE_PAIRS)
-    def test_eq_across_widths_raises(self, type_a: Type[BaseUint], type_b: Type[BaseUint]) -> None:
-        """Equality across two distinct widths raises."""
-        expected_message = (
-            f"Unsupported operand type(s) for ==: '{type_a.__name__}' and '{type_b.__name__}'"
-        )
-        with pytest.raises(TypeError) as exception_info:
-            _ = type_a(5) == type_b(5)
-        assert str(exception_info.value) == expected_message
+    def test_eq_across_widths_compares_by_value(
+        self, type_a: Type[BaseUint], type_b: Type[BaseUint]
+    ) -> None:
+        """Equality across two distinct widths compares the values."""
+        assert type_a(5) == type_b(5)
+        assert not (type_a(5) == type_b(6))
 
     @pytest.mark.parametrize("type_a, type_b", CROSS_UINT_TYPE_PAIRS)
-    def test_ne_across_widths_raises(self, type_a: Type[BaseUint], type_b: Type[BaseUint]) -> None:
-        """Inequality across two distinct widths raises."""
-        expected_message = (
-            f"Unsupported operand type(s) for !=: '{type_a.__name__}' and '{type_b.__name__}'"
-        )
-        with pytest.raises(TypeError) as exception_info:
-            _ = type_a(5) != type_b(5)
-        assert str(exception_info.value) == expected_message
+    def test_ne_across_widths_compares_by_value(
+        self, type_a: Type[BaseUint], type_b: Type[BaseUint]
+    ) -> None:
+        """Inequality across two distinct widths compares the values."""
+        assert type_a(5) != type_b(6)
+        assert not (type_a(5) != type_b(5))
 
     @pytest.mark.parametrize("uint_class", ALL_UINT_TYPES)
     def test_eq_same_width_same_value_still_equal(self, uint_class: Type[BaseUint]) -> None:
@@ -838,11 +843,11 @@ class TestCrossWidthEqualityIsStrict:
         assert not (uint_class(7) != uint_class(7))
 
     @pytest.mark.parametrize("type_a, type_b", CROSS_UINT_TYPE_PAIRS)
-    def test_hash_differs_across_widths(
+    def test_hash_matches_across_widths(
         self, type_a: Type[BaseUint], type_b: Type[BaseUint]
     ) -> None:
-        """Equal-by-value instances of different widths hash differently."""
-        assert hash(type_a(5)) != hash(type_b(5))
+        """Equal-by-value instances of different widths hash equally, like plain ints."""
+        assert hash(type_a(5)) == hash(type_b(5))
 
 
 @pytest.mark.parametrize("uint_class", ALL_UINT_TYPES)

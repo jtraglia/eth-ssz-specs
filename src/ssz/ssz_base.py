@@ -144,6 +144,23 @@ class SSZModel(StrictBaseModel, SSZType):
         """
         return self.model_copy(deep=True)
 
+    def __eq__(self, other: object) -> bool:
+        """
+        Value equality by Merkle tree root.
+
+        Two SSZ values are the same value exactly when their trees agree,
+        regardless of which equivalent class holds them — a sync committee
+        converted across spec versions still equals its source. Non-SSZ
+        operands defer to the other operand's equality.
+        """
+        if isinstance(other, SSZModel):
+            return self.hash_tree_root() == other.hash_tree_root()
+        return NotImplemented
+
+    def __hash__(self) -> int:
+        """Hash by Merkle tree root — equal values hash equally."""
+        return hash(self.hash_tree_root())
+
     def __len__(self) -> int:
         """Element count for collections, field count for containers."""
         data_field = getattr(self, "data", None)

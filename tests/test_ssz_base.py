@@ -460,3 +460,38 @@ class TestSSZMethodForms:
         duplicate[0] = 9
         assert original == Uint16List4(data=[Uint16(1), Uint16(2)])
         assert duplicate == Uint16List4(data=[Uint16(9), Uint16(2)])
+
+
+class TestValueEquality:
+    """SSZ models compare by Merkle tree root."""
+
+    def test_equivalent_classes_compare_equal(self) -> None:
+        class PointA(Container):
+            x: Uint64
+            y: Uint64
+
+        class PointB(Container):
+            x: Uint64
+            y: Uint64
+
+        a = PointA(x=Uint64(1), y=Uint64(2))
+        b = PointB(x=Uint64(1), y=Uint64(2))
+        assert a == b
+        assert hash(a) == hash(b)
+        assert a != PointB(x=Uint64(1), y=Uint64(3))
+
+    def test_collections_compare_by_root(self) -> None:
+        class Nums8A(List[Uint64]):
+            LIMIT = Uint64(8)
+
+        class Nums8B(List[Uint64]):
+            LIMIT = Uint64(8)
+
+        assert Nums8A.of(Uint64(1)) == Nums8B.of(Uint64(1))
+        assert hash(Nums8A.of(Uint64(1))) == hash(Nums8B.of(Uint64(1)))
+
+    def test_non_ssz_operand_is_not_equal(self) -> None:
+        class Point(Container):
+            x: Uint64
+
+        assert Point(x=Uint64(1)) != {"x": 1}

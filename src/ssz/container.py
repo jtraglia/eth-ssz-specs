@@ -61,10 +61,6 @@ class Container(SSZModel):
                 value = annotation(value)
         super().__setattr__(name, value)
 
-    def __hash__(self) -> int:
-        """Hash by Merkle tree root — equal containers hash equally."""
-        return hash(self.hash_tree_root())
-
     @model_validator(mode="before")
     @classmethod
     def _fill_defaults(cls, data: Any) -> Any:

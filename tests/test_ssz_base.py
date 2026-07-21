@@ -348,3 +348,67 @@ class TestSSZCollectionMutation:
         container = TwoFieldContainer(x=Uint8(1), y=Uint16(2))
         with pytest.raises(ValidationError):
             container.x = Uint8(3)
+
+
+class TestSSZDefaults:
+    """
+    Tests that zero-argument construction yields the SSZ default of every type.
+
+    The SSZ spec defines a default (zero) value for each type; construction with
+    no arguments produces it, recursively for composite types.
+    """
+
+    def test_boolean_defaults_to_false(self) -> None:
+        """Boolean() is False."""
+        assert Boolean() == Boolean(False)
+
+    def test_uint_defaults_to_zero(self) -> None:
+        """Uint64() is zero."""
+        assert Uint64() == Uint64(0)
+
+    def test_bytes_default_to_zero_fill(self) -> None:
+        """A fixed byte array defaults to all-zero bytes."""
+        from ssz import Bytes4
+
+        assert Bytes4() == Bytes4(b"\x00\x00\x00\x00")
+
+    def test_list_defaults_to_empty(self) -> None:
+        """A list defaults to no elements."""
+        assert Uint16List4() == Uint16List4(data=[])
+
+    def test_vector_defaults_to_length_default_elements(self) -> None:
+        """A vector defaults to LENGTH default-valued elements."""
+        assert Uint16Vector2() == Uint16Vector2(data=[Uint16(0), Uint16(0)])
+
+    def test_bitvector_defaults_to_length_false_bits(self) -> None:
+        """A bitvector defaults to LENGTH false bits."""
+        assert SmallBitvector() == SmallBitvector(data=[Boolean(False)] * 3)
+
+    def test_bitlist_defaults_to_empty(self) -> None:
+        """A bitlist defaults to no bits."""
+        assert SmallBitlist() == SmallBitlist(data=[])
+
+    def test_byte_list_defaults_to_empty(self) -> None:
+        """A byte list defaults to no bytes."""
+        assert SmallByteList() == SmallByteList(data=b"")
+
+    def test_container_fills_missing_fields_with_defaults(self) -> None:
+        """Unspecified container fields take their SSZ default values."""
+        container = TwoFieldContainer(x=Uint8(7))  # ty: ignore[missing-argument]
+        assert container == TwoFieldContainer(x=Uint8(7), y=Uint16(0))
+
+    def test_empty_container_is_the_default_container(self) -> None:
+        """A container with no arguments defaults every field recursively."""
+        container = ThreeFieldContainer()  # ty: ignore[missing-argument]
+        expected = ThreeFieldContainer(a=Uint8(0), b=Uint64(0), c=Uint16List4(data=[]))
+        assert container == expected
+
+    def test_container_coerces_raw_collection_payloads(self) -> None:
+        """A raw list for a collection field is coerced through the field's type."""
+        container = ThreeFieldContainer(c=cast(Any, [1, 2]))  # ty: ignore[missing-argument]
+        assert container.c == Uint16List4(data=[Uint16(1), Uint16(2)])
+
+    def test_non_dict_input_passes_through_to_pydantic(self) -> None:
+        """Non-dict inputs bypass default filling and fail model validation itself."""
+        with pytest.raises(ValidationError):
+            TwoFieldContainer.model_validate([1, 2])

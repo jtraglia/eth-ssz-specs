@@ -60,6 +60,13 @@ class BaseBitvector(SSZCollection):
     LENGTH: ClassVar[Uint64]
     """Number of bits in the vector."""
 
+    def __init__(self, **kwargs: Any) -> None:
+        """Default to LENGTH false bits when no data is given."""
+        cls = type(self)
+        if "data" not in kwargs and hasattr(cls, "LENGTH"):
+            kwargs["data"] = [Boolean(False)] * int(cls.LENGTH)
+        super().__init__(**kwargs)
+
     data: Sequence[Boolean] = Field(default_factory=tuple)
     """
     The bit data stored as a sequence of booleans.

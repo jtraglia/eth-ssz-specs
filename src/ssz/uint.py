@@ -35,7 +35,7 @@ class BaseUint(int, SSZType):
     BITS: ClassVar[int]
     """The number of bits in the integer (overridden by subclasses)."""
 
-    def __new__(cls, value: SupportsInt) -> Self:
+    def __new__(cls, value: SupportsInt = 0) -> Self:
         """
         Create and range-check a new instance.
 

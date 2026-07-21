@@ -343,6 +343,13 @@ class Vector[T: SSZType](_SSZSequence[T]):
     LENGTH: ClassVar[Uint64]
     """Exact number of elements, fixed at the type level."""
 
+    def __init__(self, **kwargs: Any) -> None:
+        """Default to LENGTH default-valued elements when no data is given."""
+        cls = type(self)
+        if "data" not in kwargs and hasattr(cls, "ELEMENT_TYPE") and hasattr(cls, "LENGTH"):
+            kwargs["data"] = [cls.ELEMENT_TYPE() for _ in range(cls.LENGTH)]
+        super().__init__(**kwargs)
+
     @field_validator("data", mode="before")
     @classmethod
     def _coerce_and_validate(cls, raw_input: Any) -> tuple[SSZType, ...]:

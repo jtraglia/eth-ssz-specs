@@ -87,7 +87,7 @@ class TestBaseBytesConstruction:
             Bytes4(wrong_input)
         assert str(exception_info.value) == f"Bytes4 requires exactly 4 bytes, got {count}"
 
-    @pytest.mark.parametrize("bad_input", [42, None, 1.5])
+    @pytest.mark.parametrize("bad_input", [42, 1.5])
     def test_construction_with_non_coercible_input_raises(self, bad_input: Any) -> None:
         """Inputs outside the accepted union raise TypeError naming the offending type."""
         name = type(bad_input).__name__

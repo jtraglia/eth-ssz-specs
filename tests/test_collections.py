@@ -289,7 +289,7 @@ class TestVectorClassMetadata:
         """The raw Vector base cannot be instantiated as a Pydantic model."""
         with pytest.raises(
             TypeError,
-            match=r"^BaseModel\.__init__\(\) takes 1 positional argument but 2 were given\Z",
+            match=r"^Vector\.__init__\(\) takes 1 positional argument but 2 were given\Z",
         ):
             Vector([])  # type: ignore[misc]
 

@@ -8,12 +8,35 @@ from pydantic import model_validator
 from pydantic.functional_validators import ModelWrapValidatorHandler
 
 from ssz.exceptions import SSZError, SSZFixedSizeError, SSZSerializationError
-from ssz.ssz_base import BYTES_PER_LENGTH_OFFSET, SSZModel, SSZType
+from ssz.ssz_base import BYTES_PER_LENGTH_OFFSET, SSZCollection, SSZModel, SSZType
 from ssz.uint import Uint32
 
 
 class Container(SSZModel):
-    """Ordered struct of named heterogeneous SSZ fields."""
+    """
+    Ordered struct of named heterogeneous SSZ fields.
+
+    Construction follows SSZ default semantics: any field not given is filled
+    with its type's default (zero) value, so ``MyContainer()`` is the SSZ
+    default container. A raw payload given for a collection field (a list of
+    elements, packed bytes) is coerced through that field's collection type.
+    """
+
+    @model_validator(mode="before")
+    @classmethod
+    def _fill_defaults(cls, data: Any) -> Any:
+        """Fill missing fields with SSZ defaults and coerce raw collection payloads."""
+        if not isinstance(data, dict):
+            return data
+        filled = dict(data)
+        for name, field in cls.model_fields.items():
+            annotation = field.annotation
+            if name not in filled:
+                # Zero-argument construction is the SSZ default for every type.
+                filled[name] = annotation()
+            elif issubclass(annotation, SSZCollection) and not isinstance(filled[name], annotation):
+                filled[name] = annotation(data=filled[name])
+        return filled
 
     @model_validator(mode="wrap")
     @classmethod

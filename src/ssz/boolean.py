@@ -28,7 +28,7 @@ class Boolean(int, SSZType):
 
     __slots__ = ()
 
-    def __new__(cls, value: bool | int) -> Self:
+    def __new__(cls, value: bool | int = False) -> Self:
         """
         Construct and validate a new boolean.
 

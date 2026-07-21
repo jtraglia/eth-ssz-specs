@@ -79,12 +79,13 @@ class BaseBytes(bytes, SSZType):
             case _:
                 raise TypeError(f"Cannot coerce {type(value).__name__} to bytes")
 
-    def __new__(cls, value: bytes | bytearray | str | Iterable[int] = b"") -> Self:
+    def __new__(cls, value: bytes | bytearray | str | Iterable[int] | None = None) -> Self:
         """
         Construct and validate a new byte array.
 
         Args:
-            value: Any input coercible to bytes — bytes, bytearray, iterable of ints, or hex string.
+            value: Any input coercible to bytes — bytes, bytearray, iterable of ints, or
+                hex string. When omitted, the SSZ default (all-zero bytes) is used.
 
         Raises:
             SSZTypeError: If the subclass has not declared a length.
@@ -93,6 +94,8 @@ class BaseBytes(bytes, SSZType):
         if not hasattr(cls, "LENGTH"):
             raise SSZDefinitionError(cls.__name__, "LENGTH")
 
+        if value is None:
+            value = b"\x00" * cls.LENGTH
         coerced_bytes = cls._coerce_to_bytes(value)
         if len(coerced_bytes) != cls.LENGTH:
             raise SSZLengthError(cls.__name__, cls.LENGTH, len(coerced_bytes), unit="bytes")

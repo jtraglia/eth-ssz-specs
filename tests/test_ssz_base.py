@@ -8,7 +8,7 @@ from pydantic import ValidationError
 from ssz import Uint8, Uint16, Uint64
 from ssz.bitfields import BaseBitlist, BaseBitvector
 from ssz.boolean import Boolean
-from ssz.byte_arrays import BaseByteList
+from ssz.byte_arrays import BaseByteList, BaseBytes
 from ssz.collections import List, Vector
 from ssz.container import Container
 from ssz.exceptions import SSZTypeError, SSZValueError
@@ -394,7 +394,9 @@ class TestSSZDefaults:
 
     def test_bytes_default_to_zero_fill(self) -> None:
         """A fixed byte array defaults to all-zero bytes."""
-        from ssz import Bytes4
+
+        class Bytes4(BaseBytes):
+            LENGTH = 4
 
         assert Bytes4() == Bytes4(b"\x00\x00\x00\x00")
 

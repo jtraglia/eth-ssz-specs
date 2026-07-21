@@ -9,9 +9,6 @@ from pydantic import ConfigDict
 from ssz.base import StrictBaseModel
 from ssz.exceptions import SSZDefinitionError, SSZSerializationError
 
-if TYPE_CHECKING:
-    from ssz.byte_arrays import Bytes32
-
 BYTES_PER_LENGTH_OFFSET: Final = 4
 """Width of an SSZ offset prefixing each variable-size element.
 
@@ -85,9 +82,9 @@ class SSZType(ABC):
         self.serialize(stream)
         return stream.getvalue()
 
-    def hash_tree_root(self) -> "Bytes32":
+    def hash_tree_root(self) -> bytes:
         """
-        Compute this value's Merkle tree root.
+        Compute this value's 32-byte Merkle tree root.
 
         Method form of the ``hash_tree_root`` function, for fluent use on any
         SSZ value.

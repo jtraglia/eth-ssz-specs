@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from typing import IO, Any, Final, Self
 
 from ssz.base import StrictBaseModel
-from ssz.exceptions import SSZSerializationError
+from ssz.exceptions import SSZDefinitionError, SSZSerializationError
 
 BYTES_PER_LENGTH_OFFSET: Final = 4
 """Width of an SSZ offset prefixing each variable-size element.
@@ -150,7 +150,25 @@ class SSZCollection(SSZModel):
 
         Uint8List4(data=[1, 2, 3])
         Uint8List4.of(1, 2, 3)
+
+    A subclass pins its size by declaring LENGTH (exact element count) or LIMIT
+    (maximum element count). The declared bound must be a Uint64 — a plain int
+    is rejected at class definition time, keeping size bounds as strictly typed
+    as every other spec value.
+
+        class Uint8List4(List[Uint8]):
+            LIMIT = Uint64(4)
     """
+
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        """Reject subclasses whose declared size bound is not a Uint64."""
+        super().__init_subclass__(**kwargs)
+        # Deferred import: the uint module imports this one.
+        from ssz.uint import Uint64
+
+        for bound_name in ("LENGTH", "LIMIT"):
+            if bound_name in cls.__dict__ and not isinstance(cls.__dict__[bound_name], Uint64):
+                raise SSZDefinitionError(cls.__name__, f"{bound_name} as a Uint64")
 
     @classmethod
     def of(cls, *elements: Any) -> Self:

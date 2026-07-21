@@ -37,6 +37,7 @@ from ssz.exceptions import (
     SSZValueError,
 )
 from ssz.ssz_base import SSZCollection
+from ssz.uint import Uint64
 
 
 class BaseBitvector(SSZCollection):
@@ -56,7 +57,7 @@ class BaseBitvector(SSZCollection):
     Bits 5, 6, 7 are trailing zeros — only the lowest 5 hold data.
     """
 
-    LENGTH: ClassVar[int]
+    LENGTH: ClassVar[Uint64]
     """Number of bits in the vector."""
 
     data: Sequence[Boolean] = Field(default_factory=tuple)
@@ -193,7 +194,7 @@ class BaseBitvector(SSZCollection):
         # SSZ requires those padding bits to be zero so the encoding is canonical.
         # Without this check, 0b00011111 and 0b11111111 both decode to a 5-bit
         # vector of all ones.
-        if trailing_bit_count := cls.LENGTH % 8:
+        if trailing_bit_count := int(cls.LENGTH) % 8:
             if data[-1] >> trailing_bit_count:
                 raise SSZValueError(
                     f"{cls.__name__}: non-zero padding bits in final byte {data[-1]:#04x}"
@@ -242,7 +243,7 @@ class BaseBitlist(SSZCollection):
         [1, 0, 1, 0, 0, 0, 0, 0] ->  0b00000101
     """
 
-    LIMIT: ClassVar[int]
+    LIMIT: ClassVar[Uint64]
     """Maximum number of bits allowed."""
 
     data: Sequence[Boolean] = Field(default_factory=tuple)

@@ -15,7 +15,7 @@ from ssz.uint import Uint8, Uint16, Uint32, Uint64
 class Uint16List4(List[Uint16]):
     """A list with up to 4 Uint16 values for variable-field testing."""
 
-    LIMIT = 4
+    LIMIT = Uint64(4)
 
 
 class TwoUint64(Container):

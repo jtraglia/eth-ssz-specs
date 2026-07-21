@@ -188,157 +188,157 @@ def test_zero_tree_root_internal() -> None:
 class Bytes48(BaseBytes):
     """Test-local fixed-size byte array of 48 bytes."""
 
-    LENGTH = 48
+    LENGTH = Uint64(48)
 
 
 class Bytes96(BaseBytes):
     """Test-local fixed-size byte array of 96 bytes spanning three chunks."""
 
-    LENGTH = 96
+    LENGTH = Uint64(96)
 
 
 class ByteList7(BaseByteList):
     """Byte list with a single-chunk capacity of 7 bytes."""
 
-    LIMIT = 7
+    LIMIT = Uint64(7)
 
 
 class ByteList10(BaseByteList):
     """Byte list with a single-chunk capacity of 10 bytes."""
 
-    LIMIT = 10
+    LIMIT = Uint64(10)
 
 
 class ByteList32(BaseByteList):
     """Byte list whose capacity exactly fills one chunk."""
 
-    LIMIT = 32
+    LIMIT = Uint64(32)
 
 
 class ByteList50(BaseByteList):
     """Byte list spanning two chunks of capacity."""
 
-    LIMIT = 50
+    LIMIT = Uint64(50)
 
 
 class ByteList256(BaseByteList):
     """Byte list with capacity for eight chunks."""
 
-    LIMIT = 256
+    LIMIT = Uint64(256)
 
 
 class ByteList2048(BaseByteList):
     """Byte list with capacity for sixty-four chunks."""
 
-    LIMIT = 2048
+    LIMIT = Uint64(2048)
 
 
 class Bitvector1(BaseBitvector):
     """Single-bit bitvector."""
 
-    LENGTH = 1
+    LENGTH = Uint64(1)
 
 
 class Bitvector3(BaseBitvector):
     """Three-bit bitvector inside one byte."""
 
-    LENGTH = 3
+    LENGTH = Uint64(3)
 
 
 class Bitvector8(BaseBitvector):
     """Bitvector aligned to one byte."""
 
-    LENGTH = 8
+    LENGTH = Uint64(8)
 
 
 class Bitvector9(BaseBitvector):
     """Bitvector spilling into a second byte."""
 
-    LENGTH = 9
+    LENGTH = Uint64(9)
 
 
 class Bitvector256(BaseBitvector):
     """Bitvector whose data fills exactly one 32-byte chunk."""
 
-    LENGTH = 256
+    LENGTH = Uint64(256)
 
 
 class Bitvector512(BaseBitvector):
     """Bitvector whose data fills exactly two chunks."""
 
-    LENGTH = 512
+    LENGTH = Uint64(512)
 
 
 class Bitlist3(BaseBitlist):
     """Bitlist limit of three bits."""
 
-    LIMIT = 3
+    LIMIT = Uint64(3)
 
 
 class Bitlist8(BaseBitlist):
     """Bitlist limit of eight bits."""
 
-    LIMIT = 8
+    LIMIT = Uint64(8)
 
 
 class Bitlist256(BaseBitlist):
     """Bitlist whose data root fits one chunk."""
 
-    LIMIT = 256
+    LIMIT = Uint64(256)
 
 
 class Bitlist512(BaseBitlist):
     """Bitlist whose data root spans two chunks."""
 
-    LIMIT = 512
+    LIMIT = Uint64(512)
 
 
 class Uint16Vector1(Vector[Uint16]):
     """Single-element vector of Uint16."""
 
-    LENGTH = 1
+    LENGTH = Uint64(1)
 
 
 class Uint16Vector2(Vector[Uint16]):
     """Two-element vector of Uint16."""
 
-    LENGTH = 2
+    LENGTH = Uint64(2)
 
 
 class Uint16Vector16(Vector[Uint16]):
     """Sixteen-element vector of Uint16 filling exactly one chunk."""
 
-    LENGTH = 16
+    LENGTH = Uint64(16)
 
 
 class Bytes32Vector3(Vector[Bytes32]):
     """Vector of three composite Bytes32 elements."""
 
-    LENGTH = 3
+    LENGTH = Uint64(3)
 
 
 class Uint16List32(List[Uint16]):
     """List of Uint16 with a 32-element limit."""
 
-    LIMIT = 32
+    LIMIT = Uint64(32)
 
 
 class Uint16List1024(List[Uint16]):
     """List of Uint16 with a 1024-element limit used as a container field."""
 
-    LIMIT = 1024
+    LIMIT = Uint64(1024)
 
 
 class Uint32List128(List[Uint32]):
     """List of Uint32 with a 128-element limit."""
 
-    LIMIT = 128
+    LIMIT = Uint64(128)
 
 
 class Bytes32List32(List[Bytes32]):
     """List of composite Bytes32 elements with a 32-element limit."""
 
-    LIMIT = 32
+    LIMIT = Uint64(32)
 
 
 class SingleField(Container):
@@ -373,13 +373,13 @@ class Var(Container):
 class FixedVector4(Vector[Fixed]):
     """Vector of four fixed-size containers."""
 
-    LENGTH = 4
+    LENGTH = Uint64(4)
 
 
 class VarVector2(Vector[Var]):
     """Vector of two variable-size containers."""
 
-    LENGTH = 2
+    LENGTH = Uint64(2)
 
 
 class EmptyContainer(Container):

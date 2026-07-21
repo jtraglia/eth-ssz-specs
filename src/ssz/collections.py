@@ -59,7 +59,7 @@ from ssz.exceptions import (
     SSZValueError,
 )
 from ssz.ssz_base import BYTES_PER_LENGTH_OFFSET, SSZCollection, SSZType
-from ssz.uint import Uint32
+from ssz.uint import Uint32, Uint64
 
 
 def _validate_offsets(offsets: list[int], scope: int, type_name: str) -> None:
@@ -155,7 +155,7 @@ class _SSZSequence[T: SSZType](SSZCollection):
         When a subclass is written as:
 
             class Uint16Vector2(Vector[Uint16]):
-                LENGTH = 2
+                LENGTH = Uint64(2)
 
         the Uint16 inside the brackets is copied into Uint16Vector2.ELEMENT_TYPE.
         This way, a user does not have to write ELEMENT_TYPE = Uint16 by hand.
@@ -340,7 +340,7 @@ class Vector[T: SSZType](_SSZSequence[T]):
         bytes 13..19 : body_1       (7 bytes)
     """
 
-    LENGTH: ClassVar[int]
+    LENGTH: ClassVar[Uint64]
     """Exact number of elements, fixed at the type level."""
 
     @field_validator("data", mode="before")
@@ -389,7 +389,7 @@ class Vector[T: SSZType](_SSZSequence[T]):
         """
         if not cls.is_fixed_size():
             raise SSZFixedSizeError(cls.__name__, "vector")
-        return cls.ELEMENT_TYPE.get_byte_length() * cls.LENGTH
+        return cls.ELEMENT_TYPE.get_byte_length() * int(cls.LENGTH)
 
     @override
     def serialize(self, stream: IO[bytes]) -> int:
@@ -398,7 +398,7 @@ class Vector[T: SSZType](_SSZSequence[T]):
         if self.is_fixed_size():
             return sum(element.serialize(stream) for element in self.data)
         # Variable-size elements: emit a table of LENGTH offsets, then the bodies.
-        return self._write_variable_payload(stream, self.LENGTH)
+        return self._write_variable_payload(stream, int(self.LENGTH))
 
     @classmethod
     @override
@@ -418,7 +418,7 @@ class Vector[T: SSZType](_SSZSequence[T]):
         # The byte budget must match LENGTH times the element width exactly.
         if cls.is_fixed_size():
             element_byte_length = cls.ELEMENT_TYPE.get_byte_length()
-            expected_total = element_byte_length * cls.LENGTH
+            expected_total = element_byte_length * int(cls.LENGTH)
             if scope != expected_total:
                 raise SSZScopeError(cls.__name__, expected_total, scope)
             elements = [
@@ -431,7 +431,7 @@ class Vector[T: SSZType](_SSZSequence[T]):
         # Scope must cover at least the offset table itself.
         # The first offset must then equal the table's own byte width.
         # Scope is appended as the final boundary so pairwise iteration yields every span.
-        expected_first = cls.LENGTH * BYTES_PER_LENGTH_OFFSET
+        expected_first = int(cls.LENGTH) * BYTES_PER_LENGTH_OFFSET
         if scope < expected_first:
             raise SSZSerializationError(
                 f"{cls.__name__}: scope {scope} too small, expected at least {expected_first}"
@@ -486,7 +486,7 @@ class List[T: SSZType](_SSZSequence[T]):
         bytes 12..17 : body_1       (6 bytes)
     """
 
-    LIMIT: ClassVar[int]
+    LIMIT: ClassVar[Uint64]
     """Maximum number of elements allowed."""
 
     @field_validator("data", mode="before")

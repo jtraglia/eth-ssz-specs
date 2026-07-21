@@ -6,7 +6,7 @@ import pytest
 from hypothesis import given, strategies as st
 from pydantic import BaseModel, ValidationError
 
-from ssz import Bytes32, Uint8, Uint16, Uint32
+from ssz import Bytes32, Uint8, Uint16, Uint32, Uint64
 from ssz.boolean import Boolean
 from ssz.collections import List, Vector, _validate_offsets
 from ssz.container import Container
@@ -19,7 +19,7 @@ TypeOrValidationError = (SSZTypeError, ValidationError)
 class Uint16List4(List[Uint16]):
     """A list with up to 4 Uint16 values."""
 
-    LIMIT = 4
+    LIMIT = Uint64(4)
 
 
 class FixedContainer(Container):
@@ -39,127 +39,127 @@ class VariableContainer(Container):
 class Uint16Vector2(Vector[Uint16]):
     """A vector of exactly 2 Uint16 values."""
 
-    LENGTH = 2
+    LENGTH = Uint64(2)
 
 
 class Uint8Vector4(Vector[Uint8]):
     """A vector of exactly 4 Uint8 values."""
 
-    LENGTH = 4
+    LENGTH = Uint64(4)
 
 
 class Uint8Vector48(Vector[Uint8]):
     """A vector of exactly 48 Uint8 values."""
 
-    LENGTH = 48
+    LENGTH = Uint64(48)
 
 
 class Uint8Vector96(Vector[Uint8]):
     """A vector of exactly 96 Uint8 values."""
 
-    LENGTH = 96
+    LENGTH = Uint64(96)
 
 
 class FixedContainerVector2(Vector[FixedContainer]):
     """A vector of exactly 2 FixedContainer values."""
 
-    LENGTH = 2
+    LENGTH = Uint64(2)
 
 
 class VariableContainerVector2(Vector[VariableContainer]):
     """A vector of exactly 2 VariableContainer values."""
 
-    LENGTH = 2
+    LENGTH = Uint64(2)
 
 
 class Uint16List32(List[Uint16]):
     """A list with up to 32 Uint16 values."""
 
-    LIMIT = 32
+    LIMIT = Uint64(32)
 
 
 class Uint8List10(List[Uint8]):
     """A list with up to 10 Uint8 values."""
 
-    LIMIT = 10
+    LIMIT = Uint64(10)
 
 
 class Uint32List128(List[Uint32]):
     """A list with up to 128 Uint32 values."""
 
-    LIMIT = 128
+    LIMIT = Uint64(128)
 
 
 class Bytes32List32(List[Bytes32]):
     """A list with up to 32 Bytes32 values."""
 
-    LIMIT = 32
+    LIMIT = Uint64(32)
 
 
 class Bytes32List128(List[Bytes32]):
     """A list with up to 128 Bytes32 values."""
 
-    LIMIT = 128
+    LIMIT = Uint64(128)
 
 
 class VariableContainerList2(List[VariableContainer]):
     """A list with up to 2 VariableContainer values."""
 
-    LIMIT = 2
+    LIMIT = Uint64(2)
 
 
 class FixedContainerList2(List[FixedContainer]):
     """A list with up to 2 FixedContainer values."""
 
-    LIMIT = 2
+    LIMIT = Uint64(2)
 
 
 class Uint8Vector32(Vector[Uint8]):
     """A vector of exactly 32 Uint8 values."""
 
-    LENGTH = 32
+    LENGTH = Uint64(32)
 
 
 class Uint16Vector32(Vector[Uint16]):
     """A vector of exactly 32 Uint16 values."""
 
-    LENGTH = 32
+    LENGTH = Uint64(32)
 
 
 class Uint8Vector64(Vector[Uint8]):
     """A vector of exactly 64 Uint8 values."""
 
-    LENGTH = 64
+    LENGTH = Uint64(64)
 
 
 class Uint8Vector2(Vector[Uint8]):
     """A vector of exactly 2 Uint8 values."""
 
-    LENGTH = 2
+    LENGTH = Uint64(2)
 
 
 class Uint8List32(List[Uint8]):
     """A list with up to 32 Uint8 values."""
 
-    LIMIT = 32
+    LIMIT = Uint64(32)
 
 
 class Uint8List64(List[Uint8]):
     """A list with up to 64 Uint8 values."""
 
-    LIMIT = 64
+    LIMIT = Uint64(64)
 
 
 class Uint8List4(List[Uint8]):
     """A list with up to 4 Uint8 values."""
 
-    LIMIT = 4
+    LIMIT = Uint64(4)
 
 
 class BooleanList4(List[Boolean]):
     """A list with up to 4 Boolean values."""
 
-    LIMIT = 4
+    LIMIT = Uint64(4)
 
 
 class Uint8Vector2Model(BaseModel):
@@ -272,7 +272,7 @@ class TestVectorClassMetadata:
         """Generic subclasses copy the bracketed type into ELEMENT_TYPE."""
 
         class LocalVector(Vector[Uint16]):
-            LENGTH = 1
+            LENGTH = Uint64(1)
 
         assert LocalVector.ELEMENT_TYPE is Uint16
 
@@ -281,7 +281,7 @@ class TestVectorClassMetadata:
 
         class LocalVector(Vector[Uint8]):
             ELEMENT_TYPE = Uint16
-            LENGTH = 1
+            LENGTH = Uint64(1)
 
         assert LocalVector.ELEMENT_TYPE is Uint16
 
@@ -491,7 +491,7 @@ class TestListClassMetadata:
         """Generic subclasses copy the bracketed type into ELEMENT_TYPE."""
 
         class LocalList(List[Uint16]):
-            LIMIT = 2
+            LIMIT = Uint64(2)
 
         assert LocalList.ELEMENT_TYPE is Uint16
 

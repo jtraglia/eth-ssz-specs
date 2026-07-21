@@ -17,18 +17,19 @@ from ssz.byte_arrays import (
     Bytes32,
 )
 from ssz.exceptions import SSZSerializationError, SSZTypeError, SSZValueError
+from ssz.uint import Uint64
 
 
 class ByteList5(BaseByteList):
     """A bytelist with limit 5 for testing."""
 
-    LIMIT = 5
+    LIMIT = Uint64(5)
 
 
 class ByteList16(BaseByteList):
     """A bytelist with limit 16 for testing."""
 
-    LIMIT = 16
+    LIMIT = Uint64(16)
 
 
 class ModelVectors(BaseModel):
@@ -426,7 +427,7 @@ class TestBaseByteListSSZ:
         """ByteList round-trips through encode_bytes, decode_bytes, and stream serialization."""
 
         class TestByteList(BaseByteList):
-            LIMIT = limit
+            LIMIT = Uint64(limit)
 
         byte_list = TestByteList(data=data)
         assert byte_list.encode_bytes() == data

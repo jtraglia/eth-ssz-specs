@@ -10,6 +10,7 @@ from pydantic import BaseModel, ValidationError
 from ssz.bitfields import BaseBitlist, BaseBitvector
 from ssz.boolean import Boolean
 from ssz.exceptions import SSZSerializationError, SSZTypeError, SSZValueError
+from ssz.uint import Uint64
 
 # Errors that may be raised either directly or wrapped by Pydantic at construction time.
 ValueOrValidationError = (SSZValueError, ValidationError)
@@ -18,7 +19,7 @@ ValueOrValidationError = (SSZValueError, ValidationError)
 class Bitvector4(BaseBitvector):
     """A bitvector of exactly 4 bits."""
 
-    LENGTH = 4
+    LENGTH = Uint64(4)
 
 
 class Bitvector4Model(BaseModel):
@@ -30,7 +31,7 @@ class Bitvector4Model(BaseModel):
 class Bitlist8(BaseBitlist):
     """A bitlist with up to 8 bits."""
 
-    LIMIT = 8
+    LIMIT = Uint64(8)
 
 
 class Bitlist8Model(BaseModel):
@@ -46,10 +47,10 @@ class TestBitvector:
         """Concrete Bitvector classes carry the declared length."""
 
         class Bitvector8(BaseBitvector):
-            LENGTH = 8
+            LENGTH = Uint64(8)
 
         class Bitvector16(BaseBitvector):
-            LENGTH = 16
+            LENGTH = Uint64(16)
 
         assert Bitvector8.LENGTH == 8
         assert Bitvector16.LENGTH == 16
@@ -119,7 +120,7 @@ class TestBitvector:
         """Item assignment on a Bitvector raises TypeError — Pydantic models are immutable."""
 
         class Bitvector2(BaseBitvector):
-            LENGTH = 2
+            LENGTH = Uint64(2)
 
         vec = Bitvector2(data=[Boolean(True), Boolean(False)])
         with pytest.raises(TypeError):
@@ -133,10 +134,10 @@ class TestBitlist:
         """Concrete Bitlist classes carry the declared limit."""
 
         class Bitlist8(BaseBitlist):
-            LIMIT = 8
+            LIMIT = Uint64(8)
 
         class Bitlist16(BaseBitlist):
-            LIMIT = 16
+            LIMIT = Uint64(16)
 
         assert Bitlist8.LIMIT == 8
         assert Bitlist16.LIMIT == 16
@@ -191,7 +192,7 @@ class TestBitlist:
         """Input exceeding LIMIT raises with the exact size in the message."""
 
         class Bitlist4(BaseBitlist):
-            LIMIT = 4
+            LIMIT = Uint64(4)
 
         with pytest.raises(ValueOrValidationError) as exception_info:
             Bitlist4(data=[Boolean(bit) for bit in [True, False, True, False, True]])
@@ -262,7 +263,7 @@ class TestBitlist:
         """Concatenation beyond LIMIT raises with the exact size in the message."""
 
         class Bitlist4(BaseBitlist):
-            LIMIT = 4
+            LIMIT = Uint64(4)
 
         bitlist = Bitlist4(data=[Boolean(True), Boolean(False), Boolean(True)])
         with pytest.raises(ValueOrValidationError) as exception_info:
@@ -277,7 +278,7 @@ class TestBitfieldSSZ:
         """Bitvector reports fixed-size and computes byte length via ceil(LENGTH / 8)."""
 
         class Bitvector10(BaseBitvector):
-            LENGTH = 10
+            LENGTH = Uint64(10)
 
         assert Bitvector10.is_fixed_size() is True
         assert Bitvector10.get_byte_length() == 2
@@ -286,7 +287,7 @@ class TestBitfieldSSZ:
         """Bitlist reports variable-size and get_byte_length raises."""
 
         class Bitlist10(BaseBitlist):
-            LIMIT = 10
+            LIMIT = Uint64(10)
 
         assert Bitlist10.is_fixed_size() is False
         with pytest.raises(SSZTypeError) as exception_info:
@@ -313,7 +314,7 @@ class TestBitfieldSSZ:
         """Bitvector round-trips through encode_bytes, decode_bytes, and stream serialization."""
 
         class TestBitvector(BaseBitvector):
-            LENGTH = length
+            LENGTH = Uint64(length)
 
         boolean_bits = tuple(Boolean(bit) for bit in bits)
         instance = TestBitvector(data=boolean_bits)
@@ -348,7 +349,7 @@ class TestBitfieldSSZ:
         """Bitlist round-trips through encode_bytes, decode_bytes, and stream serialization."""
 
         class TestBitlist(BaseBitlist):
-            LIMIT = limit
+            LIMIT = Uint64(limit)
 
         boolean_bits = tuple(Boolean(bit) for bit in bits)
         instance = TestBitlist(data=boolean_bits)
@@ -370,7 +371,7 @@ class TestBitfieldSSZ:
         """Bitvector.decode_bytes rejects inputs whose byte count is wrong."""
 
         class Bitvector8(BaseBitvector):
-            LENGTH = 8
+            LENGTH = Uint64(8)
 
         with pytest.raises(SSZValueError) as exception_info:
             Bitvector8.decode_bytes(b"\x01\x02")
@@ -380,7 +381,7 @@ class TestBitfieldSSZ:
         """Bitvector.decode_bytes rejects a final byte with set bits above the data bits."""
 
         class Bitvector5(BaseBitvector):
-            LENGTH = 5
+            LENGTH = Uint64(5)
 
         # Bits 5, 6, 7 are padding above the 5 data bits and must be zero.
         # 0b11111111 sets them, so it is a non-canonical encoding of [1] * 5.
@@ -392,7 +393,7 @@ class TestBitfieldSSZ:
         """Bitvector.decode_bytes accepts the canonical encoding with zero padding bits."""
 
         class Bitvector5(BaseBitvector):
-            LENGTH = 5
+            LENGTH = Uint64(5)
 
         # 0b00011111 holds 5 data bits all set with zero padding above them.
         assert Bitvector5.decode_bytes(b"\x1f") == Bitvector5(data=[Boolean(True)] * 5)
@@ -401,7 +402,7 @@ class TestBitfieldSSZ:
         """Bitvector.deserialize rejects a scope mismatching the type's byte length."""
 
         class Bitvector8(BaseBitvector):
-            LENGTH = 8
+            LENGTH = Uint64(8)
 
         stream = io.BytesIO(b"\xff")
         with pytest.raises(SSZSerializationError) as exception_info:
@@ -412,7 +413,7 @@ class TestBitfieldSSZ:
         """Bitvector.deserialize rejects a stream that ends before the declared scope."""
 
         class Bitvector16(BaseBitvector):
-            LENGTH = 16
+            LENGTH = Uint64(16)
 
         stream = io.BytesIO(b"\xff")
         with pytest.raises(SSZSerializationError) as exception_info:
@@ -423,7 +424,7 @@ class TestBitfieldSSZ:
         """Bitlist.decode_bytes rejects an empty byte sequence."""
 
         class Bitlist8(BaseBitlist):
-            LIMIT = 8
+            LIMIT = Uint64(8)
 
         with pytest.raises(SSZSerializationError) as exception_info:
             Bitlist8.decode_bytes(b"")
@@ -433,7 +434,7 @@ class TestBitfieldSSZ:
         """Bitlist.decode_bytes rejects non-empty input with no 1 bits — no delimiter to locate."""
 
         class Bitlist8(BaseBitlist):
-            LIMIT = 8
+            LIMIT = Uint64(8)
 
         with pytest.raises(SSZSerializationError) as exception_info:
             Bitlist8.decode_bytes(b"\x00")
@@ -443,7 +444,7 @@ class TestBitfieldSSZ:
         """Bitlist.decode_bytes rejects a trailing zero byte after the delimiter byte."""
 
         class Bitlist8(BaseBitlist):
-            LIMIT = 8
+            LIMIT = Uint64(8)
 
         # Byte 0x0d encodes bits [1, 0, 1] with the delimiter at bit 3.
         # Appending a zero byte leaves the delimiter in byte 0, not the final byte.
@@ -458,7 +459,7 @@ class TestBitfieldSSZ:
         """Bitlist.decode_bytes accepts the canonical single-byte encoding of bits [1, 0, 1]."""
 
         class Bitlist8(BaseBitlist):
-            LIMIT = 8
+            LIMIT = Uint64(8)
 
         assert Bitlist8.decode_bytes(b"\x0d") == Bitlist8(
             data=(Boolean(True), Boolean(False), Boolean(True))
@@ -468,7 +469,7 @@ class TestBitfieldSSZ:
         """Bitlist.decode_bytes rejects encodings whose recovered bit count exceeds LIMIT."""
 
         class Bitlist8(BaseBitlist):
-            LIMIT = 8
+            LIMIT = Uint64(8)
 
         # Bytes [0xFF, 0xFF, 0x01] mean 16 data bits + delimiter at bit 16 — > LIMIT=8.
         with pytest.raises(SSZValueError) as exception_info:
@@ -479,7 +480,7 @@ class TestBitfieldSSZ:
         """Bitlist.deserialize rejects a stream that ends before the declared scope."""
 
         class Bitlist16(BaseBitlist):
-            LIMIT = 16
+            LIMIT = Uint64(16)
 
         stream = io.BytesIO(b"\xff")
         with pytest.raises(SSZSerializationError) as exception_info:

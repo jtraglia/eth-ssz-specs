@@ -225,7 +225,7 @@ def _hash_tree_root_bytes(value: bytes) -> Bytes32:
 @hash_tree_root.register
 def _hash_tree_root_bytelist(value: BaseByteList) -> Bytes32:
     serialized_bytes = value.encode_bytes()
-    limit_chunks = math.ceil(type(value).LIMIT / BYTES_PER_CHUNK)
+    limit_chunks = math.ceil(int(type(value).LIMIT) / BYTES_PER_CHUNK)
     return mix_in_length(
         merkleize(_pack_bytes(serialized_bytes), limit=limit_chunks), len(serialized_bytes)
     )
@@ -233,13 +233,13 @@ def _hash_tree_root_bytelist(value: BaseByteList) -> Bytes32:
 
 @hash_tree_root.register
 def _hash_tree_root_bitvector_base(value: BaseBitvector) -> Bytes32:
-    limit = math.ceil(type(value).LENGTH / BITS_PER_CHUNK)
+    limit = math.ceil(int(type(value).LENGTH) / BITS_PER_CHUNK)
     return merkleize(_pack_bits(value.data), limit=limit)
 
 
 @hash_tree_root.register
 def _hash_tree_root_bitlist_base(value: BaseBitlist) -> Bytes32:
-    limit = math.ceil(type(value).LIMIT / BITS_PER_CHUNK)
+    limit = math.ceil(int(type(value).LIMIT) / BITS_PER_CHUNK)
     return mix_in_length(
         merkleize(_pack_bits(value.data), limit=limit),
         len(value.data),
@@ -249,7 +249,7 @@ def _hash_tree_root_bitlist_base(value: BaseBitlist) -> Bytes32:
 @hash_tree_root.register
 def _hash_tree_root_vector(value: Vector) -> Bytes32:
     cls = type(value)
-    element_type, length = cls.ELEMENT_TYPE, cls.LENGTH
+    element_type, length = cls.ELEMENT_TYPE, int(cls.LENGTH)
     if issubclass(element_type, (BaseUint, Boolean)):
         # Basic elements pack their serialized bytes into a single byte stream before chunking.
         element_size = element_type.get_byte_length()
@@ -265,7 +265,7 @@ def _hash_tree_root_vector(value: Vector) -> Bytes32:
 @hash_tree_root.register
 def _hash_tree_root_list(value: List) -> Bytes32:
     cls = type(value)
-    element_type, limit = cls.ELEMENT_TYPE, cls.LIMIT
+    element_type, limit = cls.ELEMENT_TYPE, int(cls.LIMIT)
     if issubclass(element_type, (BaseUint, Boolean)):
         element_size = element_type.get_byte_length()
         limit_chunks = math.ceil(limit * element_size / BYTES_PER_CHUNK)

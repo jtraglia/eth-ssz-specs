@@ -27,6 +27,7 @@ from ssz.exceptions import (
     SSZSerializationError,
 )
 from ssz.ssz_base import SSZCollection, SSZType
+from ssz.uint import Uint64
 
 
 class BaseBytes(bytes, SSZType):
@@ -299,7 +300,7 @@ class BaseByteList(SSZCollection):
         instance.data = b"\xde\xad\xbe\xef"  ->  wire bytes de ad be ef
     """
 
-    LIMIT: ClassVar[int]
+    LIMIT: ClassVar[Uint64]
     """Maximum number of bytes the instance may contain."""
 
     data: bytes = Field(default=b"")
@@ -457,4 +458,4 @@ class BaseByteList(SSZCollection):
 class ByteList512KiB(BaseByteList):
     """Variable-length byte list with a 512 KiB limit."""
 
-    LIMIT = 512 * 1024
+    LIMIT = Uint64(512 * 1024)

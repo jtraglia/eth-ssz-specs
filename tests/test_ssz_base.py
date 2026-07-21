@@ -10,30 +10,31 @@ from ssz.boolean import Boolean
 from ssz.byte_arrays import BaseByteList
 from ssz.collections import List, Vector
 from ssz.container import Container
+from ssz.exceptions import SSZTypeError
 
 
 class Uint16List4(List[Uint16]):
     """A list with up to 4 Uint16 values."""
 
-    LIMIT = 4
+    LIMIT = Uint64(4)
 
 
 class Uint16Vector2(Vector[Uint16]):
     """A vector of exactly 2 Uint16 values."""
 
-    LENGTH = 2
+    LENGTH = Uint64(2)
 
 
 class SmallBitvector(BaseBitvector):
     """A bitvector with exactly 3 bits."""
 
-    LENGTH = 3
+    LENGTH = Uint64(3)
 
 
 class SmallByteList(BaseByteList):
     """A byte list with up to 10 bytes."""
 
-    LIMIT = 10
+    LIMIT = Uint64(10)
 
 
 class TwoFieldContainer(Container):
@@ -54,7 +55,7 @@ class ThreeFieldContainer(Container):
 class SmallBitlist(BaseBitlist):
     """A bitlist with a small limit, used to test SSZModel.__len__ data path."""
 
-    LIMIT = 8
+    LIMIT = Uint64(8)
 
 
 class TestSSZModelLength:
@@ -195,7 +196,7 @@ class TestSSZCollectionDataDonation:
         class OtherUint16List4(List[Uint16]):
             """A distinct class with the same element shape."""
 
-            LIMIT = 4
+            LIMIT = Uint64(4)
 
         source = OtherUint16List4(data=[Uint16(1), Uint16(2)])
         assert Uint16List4(data=cast(Any, source)) == Uint16List4(data=[Uint16(1), Uint16(2)])
@@ -206,7 +207,7 @@ class TestSSZCollectionDataDonation:
         class OtherUint16Vector2(Vector[Uint16]):
             """A distinct class with the same element shape."""
 
-            LENGTH = 2
+            LENGTH = Uint64(2)
 
         source = OtherUint16Vector2(data=[Uint16(1), Uint16(2)])
         expected = Uint16Vector2(data=[Uint16(1), Uint16(2)])
@@ -218,7 +219,7 @@ class TestSSZCollectionDataDonation:
         class OtherSmallBitvector(BaseBitvector):
             """A distinct class with the same bit count."""
 
-            LENGTH = 3
+            LENGTH = Uint64(3)
 
         source = OtherSmallBitvector(data=[Boolean(True), Boolean(False), Boolean(True)])
         expected = SmallBitvector(data=[Boolean(True), Boolean(False), Boolean(True)])
@@ -230,7 +231,7 @@ class TestSSZCollectionDataDonation:
         class OtherSmallBitlist(BaseBitlist):
             """A distinct class with the same limit."""
 
-            LIMIT = 8
+            LIMIT = Uint64(8)
 
         source = OtherSmallBitlist(data=[Boolean(True), Boolean(False)])
         expected = SmallBitlist(data=[Boolean(True), Boolean(False)])
@@ -242,7 +243,40 @@ class TestSSZCollectionDataDonation:
         class OtherSmallByteList(BaseByteList):
             """A distinct class with the same limit."""
 
-            LIMIT = 10
+            LIMIT = Uint64(10)
 
         source = OtherSmallByteList(data=b"\xde\xad")
         assert SmallByteList(data=cast(Any, source)) == SmallByteList(data=b"\xde\xad")
+
+
+class TestSSZCollectionBoundTypes:
+    """Tests that declared size bounds must be Uint64 values."""
+
+    def test_plain_int_length_rejected(self) -> None:
+        """A LENGTH declared as a plain int is rejected at class definition."""
+        with pytest.raises(SSZTypeError) as exception_info:
+
+            class IntLengthBitvector(BaseBitvector):
+                LENGTH = 3
+
+        assert str(exception_info.value) == "IntLengthBitvector must define LENGTH as a Uint64"
+
+    def test_plain_int_limit_rejected(self) -> None:
+        """A LIMIT declared as a plain int is rejected at class definition."""
+        with pytest.raises(SSZTypeError) as exception_info:
+
+            class IntLimitList(List[Uint16]):
+                LIMIT = 4
+
+        assert str(exception_info.value) == "IntLimitList must define LIMIT as a Uint64"
+
+    def test_uint64_subclass_bound_accepted(self) -> None:
+        """A Uint64 subclass (a typed spec constant) is a valid bound."""
+
+        class Slot(Uint64):
+            """A Uint64 subtype, as spec constants are."""
+
+        class SlotBoundList(List[Uint16]):
+            LIMIT = Slot(4)
+
+        assert SlotBoundList(data=[Uint16(1)]).encode_bytes() == b"\x01\x00"

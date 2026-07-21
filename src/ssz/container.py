@@ -7,7 +7,7 @@ from typing import IO, Any, Self, override
 from pydantic import ConfigDict, model_validator
 from pydantic.functional_validators import ModelWrapValidatorHandler
 
-from ssz.exceptions import SSZError, SSZFixedSizeError, SSZSerializationError
+from ssz.exceptions import SSZError, SSZFixedSizeError, SSZSerializationError, SSZTypeError
 from ssz.ssz_base import BYTES_PER_LENGTH_OFFSET, SSZCollection, SSZModel, SSZType
 from ssz.uint import Uint32
 
@@ -28,6 +28,20 @@ class Container(SSZModel):
     """
 
     model_config = ConfigDict(frozen=False)
+
+    def __init__(self, value: "Container | None" = None, /, **fields: Any) -> None:
+        """
+        Construct a container from keyword fields, or copy-construct from
+        an equivalent container.
+
+        A single positional container converts by donating its fields, the
+        same way other SSZ types convert from a positional value.
+        """
+        if value is not None:
+            if fields:
+                raise SSZTypeError("cannot combine a positional container with keyword fields")
+            fields = {name: getattr(value, name) for name in type(value).model_fields}
+        super().__init__(**fields)
 
     def __setattr__(self, name: str, value: Any) -> None:
         """Coerce assigned values into the field's declared SSZ type, then assign."""

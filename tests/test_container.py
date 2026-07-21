@@ -281,6 +281,27 @@ class TestEquivalentContainerConversion:
         assert type(outer.inner) is InnerFixed
         assert outer.inner.x == Uint64(3)
 
+    def test_positional_copy_construction(self) -> None:
+        """A single positional container copy-constructs into the target class."""
+
+        class OtherInner(Container):
+            x: Uint64
+            y: Uint64
+
+        converted = InnerFixed(  # ty: ignore[missing-argument]
+            OtherInner(x=Uint64(1), y=Uint64(2))  # ty: ignore[too-many-positional-arguments]
+        )
+        assert type(converted) is InnerFixed
+        assert converted == InnerFixed(x=Uint64(1), y=Uint64(2))
+
+    def test_positional_with_keywords_raises(self) -> None:
+        """Mixing a positional container with keyword fields is ambiguous."""
+        with pytest.raises(SSZTypeError, match="cannot combine"):
+            InnerFixed(  # ty: ignore[missing-argument]
+                InnerFixed(),  # ty: ignore[missing-argument, too-many-positional-arguments]
+                x=Uint64(1),
+            )
+
     def test_nested_donation_recurses(self) -> None:
         """Donated fields containing foreign containers convert recursively."""
 

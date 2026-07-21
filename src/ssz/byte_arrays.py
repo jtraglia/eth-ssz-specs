@@ -240,8 +240,17 @@ class BaseBytes(bytes, SSZType):
         return bytes.__ne__(self, other)
 
     def __hash__(self) -> int:
-        """Return a hash distinct from raw bytes — matches the strict equality contract."""
-        return hash((type(self), bytes(self)))
+        """
+        Return a hash consistent with equality.
+
+        Equality is value-based across every byte-array class, so the hash
+        must not depend on the concrete subclass — otherwise equal values
+        (say, a ``Root`` and a ``Bytes32`` holding the same bytes) would
+        land in different dictionary buckets. The shared ``BaseBytes`` tag
+        still keeps the hash distinct from that of raw bytes, which never
+        compare equal under the strict contract.
+        """
+        return hash((BaseBytes, bytes(self)))
 
 
 class BaseByteList(SSZCollection):
@@ -404,8 +413,14 @@ class BaseByteList(SSZCollection):
         return self.data != other.data
 
     def __hash__(self) -> int:
-        """Return a hash that ties the value to its concrete type."""
-        return hash((type(self), self.data))
+        """
+        Return a hash consistent with equality.
+
+        Equality is value-based across every byte-list class, so the hash
+        uses the shared ``BaseByteList`` tag rather than the concrete
+        subclass, while staying distinct from the hash of raw bytes.
+        """
+        return hash((BaseByteList, self.data))
 
     def hex(self) -> str:
         """Return the hexadecimal string representation of the underlying bytes."""

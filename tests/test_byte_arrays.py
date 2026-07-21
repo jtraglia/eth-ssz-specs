@@ -156,9 +156,18 @@ class TestBaseBytesEquality:
         )
 
     def test_hash_distinct_from_raw_bytes(self) -> None:
-        """The hash binds the value to its concrete type, so equal raw bytes hash differently."""
+        """Raw bytes never compare equal to a typed instance, so their hashes differ too."""
         byte_array = Bytes4(b"\x00\x01\x02\x03")
         assert hash(byte_array) != hash(b"\x00\x01\x02\x03")
+
+    def test_hash_same_across_types(self) -> None:
+        """Equality is value-based across byte-array types, so equal values hash equally."""
+
+        class OtherBytes4(BaseBytes):
+            LENGTH = 4
+
+        assert Bytes4(b"\x00\x01\x02\x03") == OtherBytes4(b"\x00\x01\x02\x03")
+        assert hash(Bytes4(b"\x00\x01\x02\x03")) == hash(OtherBytes4(b"\x00\x01\x02\x03"))
 
     def test_hash_same_for_equal_instances(self) -> None:
         """Equal instances of the same type produce the same hash."""
@@ -364,11 +373,12 @@ class TestBaseByteListEquality:
             == f"Unsupported operand type(s) for !=: 'ByteList16' and '{name}'"
         )
 
-    def test_hash_includes_type(self) -> None:
-        """Instances of different bytelist types with the same data hash differently."""
+    def test_hash_same_across_types(self) -> None:
+        """Equality is value-based across bytelist types, so equal values hash equally."""
         v1 = ByteList5(data=b"\x00\x01")
         v2 = ByteList16(data=b"\x00\x01")
-        assert hash(v1) != hash(v2)
+        assert v1 == v2
+        assert hash(v1) == hash(v2)
 
     def test_hash_same_for_equal_instances(self) -> None:
         """Equal instances of the same type produce the same hash."""

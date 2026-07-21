@@ -21,6 +21,7 @@ from ssz.exceptions import (
     SSZTypeMismatch,
     SSZValueError,
 )
+from ssz.merkle_proofs import compute_merkle_proof, get_generalized_index
 from ssz.ssz_base import SSZType
 from ssz.uint import Uint8, Uint16, Uint32, Uint64, Uint128, Uint256
 
@@ -31,6 +32,8 @@ __all__ = [
     "BaseBytes",
     "Boolean",
     "Container",
+    "compute_merkle_proof",
+    "get_generalized_index",
     "List",
     "SSZDefinitionError",
     "SSZError",

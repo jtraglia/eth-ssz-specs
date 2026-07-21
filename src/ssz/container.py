@@ -4,7 +4,7 @@ import io
 from itertools import pairwise
 from typing import IO, Any, Self, override
 
-from pydantic import model_validator
+from pydantic import ConfigDict, model_validator
 from pydantic.functional_validators import ModelWrapValidatorHandler
 
 from ssz.exceptions import SSZError, SSZFixedSizeError, SSZSerializationError
@@ -20,7 +20,33 @@ class Container(SSZModel):
     with its type's default (zero) value, so ``MyContainer()`` is the SSZ
     default container. A raw payload given for a collection field (a list of
     elements, packed bytes) is coerced through that field's collection type.
+
+    Containers are mutable: assigning a field coerces the value into the
+    field's declared type, exactly as construction does. Hashing is by Merkle
+    tree root, so containers work as dict keys and set members with value
+    semantics that match equality.
     """
+
+    model_config = ConfigDict(frozen=False)
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        """Coerce assigned values into the field's declared SSZ type, then assign."""
+        field = type(self).model_fields.get(name)
+        annotation = field.annotation if field is not None else None
+        if (
+            isinstance(annotation, type)
+            and issubclass(annotation, SSZType)
+            and not isinstance(value, annotation)
+        ):
+            if issubclass(annotation, SSZCollection):
+                value = annotation(data=value)
+            else:
+                value = annotation(value)
+        super().__setattr__(name, value)
+
+    def __hash__(self) -> int:
+        """Hash by Merkle tree root — equal containers hash equally."""
+        return hash(self.hash_tree_root())
 
     @model_validator(mode="before")
     @classmethod

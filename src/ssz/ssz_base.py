@@ -223,6 +223,35 @@ class SSZCollection(SSZModel):
             if bound_name in cls.__dict__ and not isinstance(cls.__dict__[bound_name], Uint64):
                 raise SSZDefinitionError(cls.__name__, f"{bound_name} as a Uint64")
 
+    def __eq__(self, other: object) -> bool:
+        """
+        Value equality, relaxed against plain sequences.
+
+        Against another SSZ value, equality stays Merkle-root based, exactly as
+        for any SSZ value. Against a plain list or tuple, equality is
+        element-wise: equal length, and every element equal by value — the same
+        relaxation that already lets a uint compare equal to a plain int. This
+        is what lets an SSZ sequence compare equal to the plain Python list a
+        spec helper builds up, without materializing either side first.
+
+        Element-level strictness is untouched: each element is compared by its
+        own equality, so a sequence of typed bytes still raises when compared
+        against plain bytes elements. Byte lists keep their own strict equality
+        by overriding this method, so this relaxation never reaches them.
+        """
+        if isinstance(other, SSZModel):
+            return self.hash_tree_root() == other.hash_tree_root()
+        if isinstance(other, (list, tuple)):
+            elements = list(self.data)
+            if len(elements) != len(other):
+                return False
+            return all(mine == theirs for mine, theirs in zip(elements, other))
+        return NotImplemented
+
+    # Defining __eq__ would otherwise clear the inherited hash; keep values
+    # hashable by their Merkle root, staying consistent with the equality above.
+    __hash__ = SSZModel.__hash__
+
     def __setitem__(self, index: Any, value: Any) -> None:
         """Replace the element(s) at ``index``, revalidating the collection."""
         elements = list(self.data)

@@ -495,3 +495,47 @@ class TestValueEquality:
             x: Uint64
 
         assert Point(x=Uint64(1)) != {"x": 1}
+
+    def test_sequence_equals_plain_list_element_wise(self) -> None:
+        """A list compares equal to a plain list with the same values, no materializing."""
+        values = Uint16List4(data=[Uint16(1), Uint16(2), Uint16(3)])
+        assert values == [Uint16(1), Uint16(2), Uint16(3)]
+        # Relaxed element values: plain ints match typed uints, just as uint == int does.
+        assert values == [1, 2, 3]
+
+    def test_sequence_equals_plain_tuple(self) -> None:
+        """A tuple counts as a plain sequence for element-wise comparison."""
+        values = Uint16List4(data=[Uint16(1), Uint16(2)])
+        assert values == (1, 2)
+
+    def test_sequence_plain_list_on_the_left(self) -> None:
+        """The comparison is symmetric — the plain list may sit on the left."""
+        values = Uint16List4(data=[Uint16(1), Uint16(2)])
+        assert [1, 2] == values
+
+    def test_sequence_length_mismatch_is_not_equal(self) -> None:
+        """A differing length short-circuits to not-equal before comparing elements."""
+        values = Uint16List4(data=[Uint16(1), Uint16(2)])
+        assert values != [1, 2, 3]
+        assert values != [1]
+
+    def test_sequence_differing_element_is_not_equal(self) -> None:
+        """Same length but a differing element is not equal."""
+        values = Uint16List4(data=[Uint16(1), Uint16(2)])
+        assert values != [1, 9]
+
+    def test_vector_equals_plain_list(self) -> None:
+        """Fixed-length sequences relax against plain lists too."""
+        values = Uint16Vector2(data=[Uint16(1), Uint16(2)])
+        assert values == [1, 2]
+
+    def test_bitfields_equal_plain_bit_lists(self) -> None:
+        """Bitvectors and bitlists compare element-wise against plain bit sequences."""
+        assert SmallBitvector(data=[True, False, True]) == [True, False, True]
+        assert SmallBitlist(data=[True, False]) == [1, 0]
+
+    def test_sequence_against_non_sequence_is_not_equal(self) -> None:
+        """A non-sequence, non-SSZ operand yields not-equal rather than raising."""
+        values = Uint16List4(data=[Uint16(1)])
+        assert values != 5
+        assert values != {"data": [1]}
